@@ -25,3 +25,11 @@ class TreeNode:
 
 user_choice = input("What is your name?: ")
 print(f"Hello, {user_choice}!")
+
+#class StoryNode:
+#    def __init__(self, description):
+#        self.description = description
+#        self.choices = {}
+
+#    def add_choice(self, choice, node):
+#        self.choices[choice] = node
