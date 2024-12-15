@@ -16,4 +16,16 @@ The combat system can be built without the story as long as I know what kind of 
 
 game will feature. 
 
+I've settled on class objects to handle players, enemies, and combat
+I tried JSON and graphs and dicts. It just seemed too complicated for what could
+be automated with classes. 
 
+The story narrative flow will still be controlled by a tree. This will allow me to
+implement choice into the flow.
+
+The enemies will award experience and the player can level up. 
+There is currently no cap on levels, the enemy values and xp values increment with each
+new level.
+
+This may need to be refactored at some point but I won't be doing much refactoring until I
+have at lease some kind of baseline for each element of the game and can run some tests.
