@@ -1,0 +1,51 @@
+{
+    "classes": {
+        "warrior": {
+            "levels: {
+                "1": {
+                    "strength": 20,
+                    "health": 100,
+                    "defense": 15,
+                },
+                "2": {
+                    "strength": 25,
+                    "health": 120,
+                    "defense": 18
+                },
+            }
+        },
+        "mage": {
+            "levels": {
+                "1": {
+                    "strength": 10,
+                    "health": 60,
+                    "defense": 5,
+                    "magic": 30
+                },
+                "2": {
+                    "strength": 12,
+                    "health": 70,
+                    "defense": 6,
+                    "magic": 35
+                },
+            }
+        },
+        "archer": {
+            "levels": {
+                "1": {
+                    "strength": 15,
+                    "health": 80,
+                    "defense": 10,
+                    "agility": 25
+                },
+                "2": {
+                    "strength": 18,
+                    "health": 90,
+                    "defense": 12,
+                    "agility": 28
+                },
+            }
+        }
+    }
+}
+    // Add more this is a baseline

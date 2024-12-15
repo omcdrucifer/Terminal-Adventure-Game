@@ -2,7 +2,7 @@
 
 The narrative will have to use a tree node system to control story flow
 
-Combat will need at least one graph, maybe more depending on how complex I go
+I decided JSON will be a better approach for stat tracking, so no graphs needed.
 
 This is a big undertaking, but I want to give myself experience with a larger code base
 

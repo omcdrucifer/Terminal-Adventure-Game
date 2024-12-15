@@ -22,3 +22,6 @@ class TreeNode:
                 
 # Story elements would be built out either here or in another file and
 # the tree would be built from nodes of story chunks
+
+user_choice = input("What is your name?: ")
+print(f"Hello, {user_choice}!")
