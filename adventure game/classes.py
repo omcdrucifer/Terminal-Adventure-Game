@@ -74,10 +74,6 @@ class Enemy:
             self.stats["Defense"] = 8 + 2 * (self.level - 1)
             self.experience_value = 25 + 5 * (self.level - 1)
 
-    def level_up(self):
-        self.level += 1
-        self.update_stats()
-
 class Combat:
     def __init__(self, player, enemy):
         self.player = player
