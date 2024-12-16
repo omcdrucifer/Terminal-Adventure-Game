@@ -141,7 +141,7 @@ class Enemy:
 class Boss:
     def __init__(self, boss_class, player_level, party_members):
         self.boss_class = boss_class
-        self.level = player_level + len(party_members)
+        self.level = player_level + (len(party_members) + 1)
         self.stats = {
                 "Strength": 0,
                 "Health": 0,
@@ -177,7 +177,10 @@ class Combat:
     def attack(self, attacker, defender):
         hit_chance = 75
         if random.randint(1, 100) <= hit_chance:
-            damage = random.randint(5, 15)
+            if isinstance(attacker, Boss):
+                damage = random.randint(5, attacker.stats["Strength"] // 2)
+            else:
+                damage = random.randint(5, attacker.stats["Strength"])
             defense = random.randint(0, defender.stats["Defense"])
             actual_damage = max(0, damage - defense)
             defender.stats["Health"] -= actual_damage
@@ -185,12 +188,20 @@ class Combat:
                 attacker_type = attacker.player_class
             elif hasattr(attacker, 'enemy_class'):
                 attacker_type = attacker.enemy_class
+            elif hasattr(attacker, 'npc_class'):
+                attacker_type = attacker.npc_class
+            elif hasattr(attacker, 'boss_class'):
+                attacker_type = attacker.boss_class
             else:
                 attacker_type = 'Unknown'
             if hasattr(defender, 'player_class'):
                 defender_type = defender.player_class
             elif hasattr(defender, 'enemy_class'):
                 defender_type = defender.enemy_class
+            elif hasattr(attacker, 'npc_class'):
+                defender_type = defender.npc_class
+            elif hasattr(attacker, 'boss_class'):
+                attacker_type = attacker.boss_class
             else:
                 defender_type = 'Unknown'
             if defender.stats["Health"] <= 0:
@@ -201,6 +212,37 @@ class Combat:
                 return f"Hit! {attacker_type} deals {actual_damage} damage to {defender_type}."
         else:
             return "Miss!"
+
+class Boss:
+    def __init__(self, boss_class, player_level, party_members):
+        self.boss_class = boss_class
+        self.level = player_level + (len(party_members) + 1)
+        self.stats = {
+                "Strength": 0,
+                "Health": 0,
+                "Defense": 0,
+                "Magic": 0,
+                "Agility": 0
+                }
+        self.experience_value = 0
+        self.update_stats()
+
+    def update_stats(self):
+        if self.boss_class == "Dragon":
+            self.stats["Strength"] = 50 + 10 * (self.level - 1)
+            self.stats["Health"] = 300 + 50 * (self.level - 1)
+            self.stats["Defense"] = 20 + 5 * (self.level - 1)
+            self.experience_value = 100 + 20 * (self.level - 1)
+        elif self.boss_class == "Troll":
+            self.stats["Strength"] = 30 + 10 * (self.level - 1)
+            self.stats["Health"] = 200 + 30 * (self.level - 1)
+            self.stats["Defense"] = 15 + 5 * (self.level - 1)
+            self.experience_value = 75 + 15 * (self.level - 1)
+        elif self.boss_class == "Giant":
+            self.stats["Strength"] = 25 + 12 * (self.level - 1)
+            self.stats["Health"] = 100 + 20 * (self.level - 1)
+            self.stats["Defense"] = 15 + 4 * (self.level - 1)
+            self.experience_value = 55 + 10 * (self.level - 1)
 
 # combat example
 player = Player()
