@@ -50,8 +50,6 @@ class NPC:
     def __init__(self, npc_class, player_level):
         self.npc_class = npc_class
         self.level = player_level
-        self.experience = 0
-        self.experience_to_next_level = 100   
 #       self.max_level = N  -- if I wanted to impose a level cap
         self.stats = {
                 "Strength": 0,
@@ -78,19 +76,9 @@ class NPC:
             self.stats["Defense"] = 10 + 2 * (self.level - 1)
             self.stats["Agility"] = 25 + 5 * (self.level - 1)
 
-    def gain_experience(self, xp):
-#       if self.level == self.max_level:
-#           break    -- handles the edge case if I were to impose a level cap
-        self.experience += xp
-        if self.experience >= self.experience_to_next_level:
-            self.level_up()
-
-    def level_up(self):
-        self.level += 1
-        self.experience -= self.experience_to_next_level
-        self.experience_to_next_level = int(self.experience_to_next_level * 1.5)
+    def synchronize_level(self, player_level):
+        self.level = player_level
         self.update_stats()
-        print(f"{self.npc_class} leveled up to {self.level}!")
 
 class Party:
     def __init__(self):
@@ -102,6 +90,11 @@ class Party:
     def remove_member(self, member):
         self.members.remove(member)
 
+    def synchronize_npc_levels(self, player_level):
+        for member in self.members:
+            if isinstance(member, NPC):
+                member.synchronize_level(player_level)
+                print(f"{member.npc_class} is now {member.level}!")
 class Enemy:
     def __init__(self, enemy_class, player_level):
         self.enemy_class = enemy_class
@@ -213,40 +206,17 @@ class Combat:
         else:
             return "Miss!"
 
-class Boss:
-    def __init__(self, boss_class, player_level, party_members):
-        self.boss_class = boss_class
-        self.level = player_level + (len(party_members) + 1)
-        self.stats = {
-                "Strength": 0,
-                "Health": 0,
-                "Defense": 0,
-                "Magic": 0,
-                "Agility": 0
-                }
-        self.experience_value = 0
-        self.update_stats()
-
-    def update_stats(self):
-        if self.boss_class == "Dragon":
-            self.stats["Strength"] = 50 + 10 * (self.level - 1)
-            self.stats["Health"] = 300 + 50 * (self.level - 1)
-            self.stats["Defense"] = 20 + 5 * (self.level - 1)
-            self.experience_value = 100 + 20 * (self.level - 1)
-        elif self.boss_class == "Troll":
-            self.stats["Strength"] = 30 + 10 * (self.level - 1)
-            self.stats["Health"] = 200 + 30 * (self.level - 1)
-            self.stats["Defense"] = 15 + 5 * (self.level - 1)
-            self.experience_value = 75 + 15 * (self.level - 1)
-        elif self.boss_class == "Giant":
-            self.stats["Strength"] = 25 + 12 * (self.level - 1)
-            self.stats["Health"] = 100 + 20 * (self.level - 1)
-            self.stats["Defense"] = 15 + 4 * (self.level - 1)
-            self.experience_value = 55 + 10 * (self.level - 1)
-
 # combat example
 player = Player()
 enemy = Enemy("Goblin", player.level)
 combat = Combat(player, enemy)
 result = combat.attack(player, enemy)
 print(result)
+# party usage
+player = Player()
+npc1 = NPC("Healer", player.level)
+npc2 = NPC("Fighter", player.level)
+party = Party()
+party.add_member(player)
+party.add_member(npc1)
+party.add_member(npc2)
