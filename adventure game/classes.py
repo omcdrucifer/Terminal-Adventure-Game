@@ -175,7 +175,7 @@ class Combat:
                 damage = random.randint(5, self.attacker.stats["Strength"] // 2)
             else:
                 damage = random.randint(5, self.attacker.stats["Strength"])
-            defense = random.randint(0,self.defender.stats["Defense"])
+            defense = random.randint(0, self.defender.stats["Defense"])
             actual_damage = max(0, damage - defense)
             self.defender.stats["Health"] -= actual_damage
             attacker_type = self.get_combatant_type(self.attacker)
