@@ -163,49 +163,46 @@ class Boss:
             self.experience_value = 55 + 10 * (self.level - 1)
 
 class Combat:
-    def __init__(self, player, enemy):
-        self.player = player
-        self.enemy = enemy
-# values for combat system are placeholders, will be refined as system is fleshed out
-    def attack(self, attacker, defender):
+    def __init__(self, attacker, defender, party):
+        self.attacker = attacker
+        self.defender = defender
+        self.party = party
+
+    def attack(self):
         hit_chance = 75
         if random.randint(1, 100) <= hit_chance:
-            if isinstance(attacker, Boss):
-                damage = random.randint(5, attacker.stats["Strength"] // 2)
+            if isinstance(self.attacker, Boss):
+                damage = random.randint(5, self.attacker.stats["Strength"] // 2)
             else:
-                damage = random.randint(5, attacker.stats["Strength"])
-            defense = random.randint(0, defender.stats["Defense"])
+                damage = random.randint(5, self.attacker.stats["Strength"])
+            defense = random.randint(0,self.defender.stats["Defense"])
             actual_damage = max(0, damage - defense)
-            defender.stats["Health"] -= actual_damage
-            if hasattr(attacker, 'player_class'):
-                attacker_type = attacker.player_class
-            elif hasattr(attacker, 'enemy_class'):
-                attacker_type = attacker.enemy_class
-            elif hasattr(attacker, 'npc_class'):
-                attacker_type = attacker.npc_class
-            elif hasattr(attacker, 'boss_class'):
-                attacker_type = attacker.boss_class
-            else:
-                attacker_type = 'Unknown'
-            if hasattr(defender, 'player_class'):
-                defender_type = defender.player_class
-            elif hasattr(defender, 'enemy_class'):
-                defender_type = defender.enemy_class
-            elif hasattr(attacker, 'npc_class'):
-                defender_type = defender.npc_class
-            elif hasattr(attacker, 'boss_class'):
-                attacker_type = attacker.boss_class
-            else:
-                defender_type = 'Unknown'
-            if defender.stats["Health"] <= 0:
-                if isinstance(defender, Enemy):
-                    self.player.gain_experience(defender.experience_value)
+            self.defender.stats["Health"] -= actual_damage
+            attacker_type = self.get_combatant_type(self.attacker)
+            defender_type = self.get_combatant_type(self.defender)
+            if self.defender.stats["Health"] <= 0:
+                if isinstance(self.defender, Enemy):
+                    initial_level = self.attacker.level
+                    self.attacker.gain_experience(self.defender.experience_value)
+                    if self.attacker.level > initial_level:
+                        self.party.synchronize_npc_levels(self.attacker.level)
                 return f"{attacker_type} defeats {defender_type}!"
             else:
                 return f"Hit! {attacker_type} deals {actual_damage} damage to {defender_type}."
         else:
             return "Miss!"
 
+    def get_combatant_type(self, combatant):
+        if hasattr(combatant, 'player_class'):
+            return combatant.player_class
+        elif hasattr(combatant, 'enemy_class'):
+            return combatant.enemy_class
+        elif hasattr(combatant, 'npc_class'):
+            return combatant.npc_class
+        elif hasattr(combatant, 'boss_class'):
+            return combatant.boss_class
+        else:
+            return 'Unknown'
 # combat example
 player = Player()
 enemy = Enemy("Goblin", player.level)
@@ -220,3 +217,6 @@ party = Party()
 party.add_member(player)
 party.add_member(npc1)
 party.add_member(npc2)
+combat = Combat(player, enemy, party)
+result = combat.attack()
+print(result)
