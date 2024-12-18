@@ -1,4 +1,24 @@
-import random
+from party import Party
+
+class Spell:
+    def __init__(self, name, mana_cost, base_damage, scaling_factor=0.5):
+        self.name = name
+        self.mana_cost = mana_cost
+        self.base_damage = base_damage
+        self.scaling_factor = scaling_factor
+
+    def initialize_mage_spells():
+        return {
+                "Fireball": Spell("Fireball", mana_cost=20, base_damage=25, scaling_factor=0.6),
+                "Ice Shard": Spell("Ice Shard", mana_cost=15, base_damage=20, scaling_factor=0.4),
+                "Lightning Bolt": Spell("Lightning Bolt", mana_cost=25, base_damage=30, scaling_factor=0.7)
+                }
+    def initialize_healer_spells():
+        return {
+                "Heal": Spell("Heal", mana_cost=15, base_damage=20, scaling_factor=0.5),
+                "Smite": Spell("Smite", mana_cost=10, base_damage=15, scaling_factor=0.3),
+                "Blessing": Spell("Blessing", mana_cost=20, base_damage=15, scaling_factor=0.4)
+                }
 
 class Player:
     def __init__(self):
@@ -14,7 +34,21 @@ class Player:
                 "Magic": 0,
                 "Agility": 0
                 }
+        self.spells = {}
+        self.current_mana = 0
+        self.max_mana = 0
         self.update_stats()
+        self.initialize_class_features()
+
+    def initialize_class_features(self):
+        if self.player_class in ["Mage", "Healer"]:
+            if self.player_class == "Mage":
+                self.spells = initialize_mage_spells()
+            else:
+                self.spells = initialize_healer_spells()
+
+            self.max_mana = self.stats["Magic"] * 5 + (self.level * 10)
+            self.current_mana = self.max_mana
 
     def update_stats(self):
         if self.player_class == "Warrior":
@@ -31,6 +65,14 @@ class Player:
             self.stats["Health"] = 80 + 15 * (self.level - 1)
             self.stats["Defense"] = 10 + 2 * (self.level - 1)
             self.stats["Agility"] = 25 + 5 * (self.level - 1)
+
+        if self.player_class in ["Mage", "Healer"]:
+            old_max_mana = self.max_mana
+            self.max_mana = self.stats["Magic"] * 5 + (self.max_mana * 10)
+            if old_max_mana > 0:
+                self.current_mana = int((self.current_mana / old_max_mana) * self.max_mana)
+            else:
+                self.current_mana = self.max_mana
 
     def gain_experience(self, xp):
 #       if self.level == self.max_level:
@@ -58,7 +100,21 @@ class NPC:
                 "Magic": 0,
                 "Agility": 0
                 }
+        self.spells = {}
+        self.current_mana = 0
+        self.max_mana = 0
         self.update_stats()
+        self.initialize_class_features()
+
+    def initialize_class_features(self):
+        if self.npc_class in ["Mage", "Healer"]:
+            if self.npc_class == "Mage":
+                self.spells = initialize_mage_spells()
+            else:
+                self.spells = initialize_healer_spells()
+
+            self.max_mana = self.stats["Magic"] * 5 + (self.level * 10)
+            self.current_mana = self.max_mana
 
     def update_stats(self):
         if self.npc_class == "Fighter":
@@ -76,25 +132,18 @@ class NPC:
             self.stats["Defense"] = 10 + 2 * (self.level - 1)
             self.stats["Agility"] = 25 + 5 * (self.level - 1)
 
-    def synchronize_level(self, player_level):
-        self.level = player_level
+        if self.npc_class in ["Mage", "Healer"]:
+            old_max_mana = self.max_mana
+            self.max_mana = self.stats["Magic"] * 5 + (self.max_mana * 10)
+            if old_max_mana > 0:
+                self.current_mana = int((self.current_mana / old_max_mana) * self.max_mana)
+            else:
+                self.current_mana = self.max_mana
+
+    def synchronize_level(self, npc_level):
+        self.level = npc_level
         self.update_stats()
 
-class Party:
-    def __init__(self):
-        self.members = []
-
-    def add_member(self, member):
-        self.members.append(member)
-
-    def remove_member(self, member):
-        self.members.remove(member)
-
-    def synchronize_npc_levels(self, player_level):
-        for member in self.members:
-            if isinstance(member, NPC):
-                member.synchronize_level(player_level)
-                print(f"{member.npc_class} is now {member.level}!")
 class Enemy:
     def __init__(self, enemy_class, player_level):
         self.enemy_class = enemy_class
@@ -132,9 +181,10 @@ class Enemy:
             self.experience_value = 25 + 5 * (self.level - 1)
 
 class Boss:
-    def __init__(self, boss_class, player_level, party_members):
+    def __init__(self, boss_class, player_level, player_party):
         self.boss_class = boss_class
-        self.level = player_level + (len(party_members) + 1)
+        player_party_size = len([member for member in player_party.members if isinstance(member, (Player, NPC))])
+        self.level = player_level + (player_party_size + 1)
         self.stats = {
                 "Strength": 0,
                 "Health": 0,
@@ -162,61 +212,4 @@ class Boss:
             self.stats["Defense"] = 15 + 4 * (self.level - 1)
             self.experience_value = 55 + 10 * (self.level - 1)
 
-class Combat:
-    def __init__(self, attacker, defender, party):
-        self.attacker = attacker
-        self.defender = defender
-        self.party = party
 
-    def attack(self):
-        hit_chance = 75
-        if random.randint(1, 100) <= hit_chance:
-            if isinstance(self.attacker, Boss):
-                damage = random.randint(5, self.attacker.stats["Strength"] // 2)
-            else:
-                damage = random.randint(5, self.attacker.stats["Strength"])
-            defense = random.randint(0, self.defender.stats["Defense"])
-            actual_damage = max(0, damage - defense)
-            self.defender.stats["Health"] -= actual_damage
-            attacker_type = self.get_combatant_type(self.attacker)
-            defender_type = self.get_combatant_type(self.defender)
-            if self.defender.stats["Health"] <= 0:
-                if isinstance(self.defender, Enemy):
-                    initial_level = self.attacker.level
-                    self.attacker.gain_experience(self.defender.experience_value)
-                    if self.attacker.level > initial_level:
-                        self.party.synchronize_npc_levels(self.attacker.level)
-                return f"{attacker_type} defeats {defender_type}!"
-            else:
-                return f"Hit! {attacker_type} deals {actual_damage} damage to {defender_type}."
-        else:
-            return "Miss!"
-
-    def get_combatant_type(self, combatant):
-        if hasattr(combatant, 'player_class'):
-            return combatant.player_class
-        elif hasattr(combatant, 'enemy_class'):
-            return combatant.enemy_class
-        elif hasattr(combatant, 'npc_class'):
-            return combatant.npc_class
-        elif hasattr(combatant, 'boss_class'):
-            return combatant.boss_class
-        else:
-            return 'Unknown'
-# combat example
-player = Player()
-enemy = Enemy("Goblin", player.level)
-combat = Combat(player, enemy)
-result = combat.attack(player, enemy)
-print(result)
-# party usage
-player = Player()
-npc1 = NPC("Healer", player.level)
-npc2 = NPC("Fighter", player.level)
-party = Party()
-party.add_member(player)
-party.add_member(npc1)
-party.add_member(npc2)
-combat = Combat(player, enemy, party)
-result = combat.attack()
-print(result)
