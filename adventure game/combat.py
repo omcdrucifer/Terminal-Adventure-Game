@@ -1,5 +1,4 @@
 import random
-import time
 from party import Party
 from characters import Player, NPC, Boss, Enemy
 
@@ -12,7 +11,7 @@ class Spell:
 
 class Combat:
     def __init__(self, player_party, enemy_party):
-        if player_party.party_type != "player" ir enemy_party.party_type != "enemy":
+        if player_party.party_type != "player" or enemy_party.party_type != "enemy":
             raise ValueError("Combat must be between a player party and enemy party")
 
         self.player_party = player_party
