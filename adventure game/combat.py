@@ -1,6 +1,6 @@
 import random
 from party import Party
-from characters import Player, NPC, Boss, Enemy
+from characters import Player, NPC, Boss, Enemy, Spell
 
 class Spell:
     def __init__(self, name, mana_cost, base_damage, scaling_factor=0.5):
@@ -155,8 +155,8 @@ class Combat:
                 else:
                     if not self.get_next_active_player:
                         return "DEFEAT"
-                return f"DEFEAT {self.get_combatant_type(defender)}"
-            return f"Hit! {actual_damage}"
+                return f"DEFEAT_{self.get_combatant_type(defender)}"
+            return f"HIT_{actual_damage}"
         else:
             return "Miss!"
 
