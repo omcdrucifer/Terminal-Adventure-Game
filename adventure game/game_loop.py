@@ -6,6 +6,7 @@ from party import Party
 from combat import Combat, Spell
 from Story import StoryNode, StoryChoice, StoryTree, handle_story_progression, create_example_story # these are filler for now
 from save_states import GameSave
+from key_press import KeyboardInput
 
 class Game:
     def __init__(self):
@@ -15,6 +16,7 @@ class Game:
         self.current_location = "town"
         self.playing = True
         self.story = create_example_story() # initialize story
+        self.keyboard = KeyboardInput()
 
     def main_menu(self):
         while True:
