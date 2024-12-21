@@ -21,8 +21,8 @@ class Spell:
                 }
 
 class Player:
-    def __init__(self):
-        self.player_class = input("Choose a class (Warrior, Mage, Archer)").strip().title()
+    def __init__(self, chosen_class):
+        self.player_class = chosen_class
         self.level = 1
         self.experience = 0
         self.experience_to_next_level = 100   
@@ -39,6 +39,15 @@ class Player:
         self.max_mana = 0
         self.update_stats()
         self.initialize_class_features()
+
+    @property
+    def max_health(self):
+        if self.player.player_class == "Warrior":
+            return 100 + 20 * (self.level - 1)
+        if self.player.player_class == "Mage":
+            return 60 + 10 * (self.level - 1)
+        if self.player.player_class == "Archer":
+            return 80 + 15 * (self.level - 1)
 
     def initialize_class_features(self):
         if self.player_class in ["Mage", "Healer"]:

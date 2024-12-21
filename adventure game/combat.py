@@ -190,3 +190,66 @@ class Combat:
             target = self.enemy_party.members[target_index]
             return self.cast_spell(combatant, spell_name, target)
         return "Invalid action"
+
+    def handle_combat_encounter(player_party, enemy_party):
+        combat = Combat(player_party, enemy_party)
+        while True:
+            party_status, enemy_status = combat.get_combat_status()
+            print("\nCurrent Combat Status:")
+            print("Player Party:")
+            for status in party_status:
+                print(f"- {status}")
+            print("Enemy Party:")
+            for status in enemy_status:
+                print(f"- {status}")
+
+            if combat.is_player_turn:
+                active_combatant = combat.get_active_combatant()
+                if isinstance(active_combatant, Player):
+                    print(f"\n{active_combatant.player_class}'s turn!")
+                    print("1. Attack")
+                    # add more actions here like use item, cast spell, etc
+
+                    while True:
+                        try:
+                            action = int(input("Choose your action (1-1):")) # adjust as more choices are added
+                            if action == 1: # attack
+                                print("Choose target:")
+                                for i, status, in enumerate(enemy_status):
+                                    print(f"{i + 1}. {status}")
+                                target = int(input(f"\nSelect target (1-{len(enemy_status)}): ")) - 1
+                                if 0 <= target < len(enemy_status):
+                                    result = combat.attack(target)
+                                    handle_combat_result(result)
+                                    break
+                                else:
+                                    print("Invalid target!")
+                            else:
+                                print("Invalid action!")
+                        except ValueError:
+                            print("Please enter a valid number!")
+                else:
+                    # NPC automatic attack
+                    result = combat.attack()
+                    handle_combat_result(result)
+            else:
+                # enemy turn
+                result = combat.attack()
+                handle_combat_result(result)
+            # check for combat end
+            if result in ["VICTORY", "DEFEAT"]:
+                return result == "VICTORY"
+
+    def handle_combat_result(result):
+        if result.startswith("HIT"):
+            damage = result.split("_")[1]
+            print(f"Hit! Dealt {damage} damage!")
+        elif result == "MISS":
+            print("Attack missed!")
+        elif result.startswith("DEFEAT_"):
+            defeated_type = result.split("_")[1]
+            print(f"{defeated_type} was defeated!")
+        elif result == "VICTORY":
+            print("Victory! All enemies defeated!")
+        elif result == "DEFEAT":
+            print("Defeat! Your party has fallen!")

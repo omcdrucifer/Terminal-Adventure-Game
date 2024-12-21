@@ -16,16 +16,84 @@ class Game:
         self.playing = True
         self.story = create_example_story() # initialize story
 
+    def main_menu(self):
+        while True:
+            print("\n" + "="*50)
+            print("WELCOME TO [GAME NAME]")
+            print(""="*50")
+            print("1. New Game")
+            print("2. Load Game")
+            print("3. Quit")
+
+            choice = input("\nEnter your choice: ")
+            if choice == "1":
+                self.start_new_game()
+                if self.player: # only starts a game if a player was created
+                    self.main_game_loop()
+            elif choice == "2":
+                if self.load_game():
+                    self.main_game_loop()
+            elif choice == "3":
+                print("\nThanks for playing!")
+                break
+
     def start_new_game(self):
         try:
+            print("\nChoose your class:")
+            print("1. Warrior")
+            print("1. Mage")
+            print("1. Archer")
+
+            while True:
+                choice = input("\nEnter choice (1-3): ")
+                if choice == "1":
+                    player_class = "Warrior"
+                elif choice == "2":
+                    player_class = "Mage"
+                elif choice == "3":
+                    player_class = "Archer"
+
             self.player = Player()
             self.player_party = Party("player")
             self.player_party.add_member(self.player)
             print(f"\nWelcome, level {self.player.level} {self.player.player_class}!")
             self.story.start_story("start")
+            return True
         except ValueError as e:
             print(f"\nError creating character: {e}")
             return False
+    
+    def load_game(self):
+        save_data = self.game_save.handle_save_menu(None, None)
+        if save_data:
+            # reconstruct player from save data
+            self.player = Player()
+            self.player.player_class = save_data["player"]["class"]
+            self.player.level = save_data["player"]["level"]
+            self.player.experience = save_data["player"]["experience"]
+            self.player.stats = save_data["player"]["stats"]
+            if "current_mana" in save_data["player"]:
+                self.player.current_mana = save_data["player"]["current_mana"]
+                self.player.max_mana = save_data["player"]["max_mana"]
+            self.player_party = Party("player")
+            self.player_party.add_member(self.player)
+            self.current_location = save_data["location"]
+            print(f"\nWelcome back, level {self.player.level} {self.player.player_class}!")
+            return True
+        return False
+
+    def main_game_loop(self):
+        self.playing = True
+        while self.playing:
+            self.handle_story_node()
+            # could add location based menus triggered by progression
+            if self.current_location == "town":
+                self.town_menu()
+            elif self.current_location == "dungeon":
+                self.dungeon_menu()
+            else:
+                print("Error: Invalid location!")
+                self.current_location = "town"
 
     def handle_story_node(self):
         result = handle_story_progression(self.story, self.player_party)
@@ -54,18 +122,6 @@ class Game:
             elif result["type"] == "recruitment":
                 self.handle_recruitment(result["content"])
 
-    def main_game_loop(self):
-        self.playing = True
-        while self.playing:
-            self.handle_story_node()
-            # could add location based menus triggered by progression
-            if self.current_location == "town":
-                self.town_menu()
-            elif self.current_location == "dungeon":
-                self.dungeon_menu()
-            else:
-                print("Error: Invalid location!")
-                self.current_location = "town"
     # i still need to write an actual story, these menus are placeholder concepts only
     def town_menu(self):
         while self.current_location == "town":
@@ -156,73 +212,43 @@ class Game:
     def rest(self):
         print("\nResting...")
         time.sleep(1)
-        self.player.stats["Health"] = 100 # placeholder until I can figure out how to get this to reference Health
+        self.player.stats["Health"] = self.player.max_health
         if hasattr(self.player, "current_mana"):
             self.player.current_mana = self.player.max_mana
         print("HP and Mana restored!")
         time.sleep(1)
 
     def start_combat(self):
+        enemy_party = Party("enemy")
+        enemy = Enemy("Goblin", self.player_level)
+        enemy_party.add_member(enemy)
+        combat = Combat(self.player_party, enemy_party)
+        result = self.handle_combat(combat)
 
-    def handle_combat_encounter(player_party, enemy_party):
-        combat = Combat(player_party, enemy_party)
-        while True:
-            party_status, enemy_status = combat.get_combat_status()
-            print("\nCurrent Combat Status:")
-            print("Player Party:")
-            for status in party_status:
-                print(f"- {status}")
-            print("Enemy Party:")
-            for status in enemy_status:
-                print(f"- {status}")
+        if result:
+            print("\nVictory!")
+        else:
+            print("\nDefeat!")
+            self.current_location = "town"
 
-            if combat.is_player_turn:
-                active_combatant = combat.get_active_combatant()
-                if isinstance(active_combatant, Player):
-                    print(f"\n{active_combatant.player_class}'s turn!")
-                    print("1. Attack")
-                    # add more actions here like use item, cast spell, etc
+    def start_boss_combat(self):
+        enemy_party = Party("enemy")
+        enemy = Boss("Dragon", self.player_level, self.player_party)
+        enemy_party.add_member(boss)
+        combat = Combat(self.player_party, enemy_party)
+        result = self.handle_combat(combat)
 
-                    while True:
-                        try:
-                            action = int(input("Choose your action (1-1):")) # adjust as more choices are added
-                            if action == 1: # attack
-                                print("Choose target:")
-                                for i, status, in enumerate(enemy_status):
-                                    print(f"{i + 1}. {status}")
-                                target = int(input(f"\nSelect target (1-{len(enemy_status)}): ")) - 1
-                                if 0 <= target < len(enemy_status):
-                                    result = combat.attack(target)
-                                    handle_combat_result(result)
-                                    break
-                                else:
-                                    print("Invalid target!")
-                            else:
-                                print("Invalid action!")
-                        except ValueError:
-                            print("Please enter a valid number!")
-                else:
-                    # NPC automatic attack
-                    result = combat.attack()
-                    handle_combat_result(result)
-            else:
-                # enemy turn
-                result = combat.attack()
-                handle_combat_result(result)
-            # check for combat end
-            if result in ["VICTORY", "DEFEAT"]:
-                return result == "VICTORY"
+        if result:
+            print("Boss defeated!")
+        else:
+            print("\nDefeated by boss!")
+            self.current_location = "town"
 
-    def handle_combat_result(result):
-        if result.startswith("HIT"):
-            damage = result.split("_")[1]
-            print(f"Hit! Dealt {damage} damage!")
-        elif result == "MISS":
-            print("Attack missed!")
-        elif result.startswith("DEFEAT_"):
-            defeated_type = result.split("_")[1]
-            print(f"{defeated_type} was defeated!")
-        elif result == "VICTORY":
-            print("Victory! All enemies defeated!")
-        elif result == "DEFEAT":
-            print("Defeat! Your party has fallen!")
+    def handle_combat(self, combat):
+        # auto save before fight
+        self.game_save.save_game(self.player, self.current_location, auto_save=True)
+        return combat.handle_combat_encounter()
+
+if __name__ == "__main__":
+    game = Game()
+    game.main_menu()
