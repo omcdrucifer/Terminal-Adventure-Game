@@ -1,5 +1,5 @@
 # manages parties for both players and enemies
-from characters import Player, NPC, Enemy, Boss
+from base_classes import GameEntity
 
 class Party:
     def __init__(self, party_type="player"):
@@ -7,13 +7,15 @@ class Party:
         self.party_type = party_type
 
     def add_member(self, member):
+        if not isinstance(member, GameEntity):
+            raise ValueError("Can only add game entities to parties")
         if self.party_type == "player":
-            if isinstance(member, (Player, NPC)):
+            if hasattr(member, 'player_class') or hasattr(member, 'npc_class'):
                 self.members.append(member)
             else:
                 raise ValueError("Can only add Player or NPC to player parties")
         elif self.party_type == "enemy":
-            if isinstance(member, (Enemy, Boss)):
+            if hasattr(member, 'enemy_class') or hasattr(member, 'boss_class'):
                 self.members.append(member)
             else:
                 raise ValueError("Can only add Enemy or Boss to enemy parties")

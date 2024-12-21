@@ -1,10 +1,17 @@
 # Game flow control
 from math import inf
 import random
-from characters import Player, NPC, Enemy, Boss, Spell
+from base_classes import GameEntity
+from characters import (
+        Player, NPC, Boss, Enemy, Spell,
+        initialize_mage_spells, initialize_healer_spells
+        )
 from party import Party
-from combat import Combat, Spell
-from Story import StoryNode, StoryChoice, StoryTree, handle_story_progression, create_example_story # these are filler for now
+from combat import Combat 
+from tree import (
+        StoryNode, StoryChoice, StoryTree,
+        create_example_story, handle_story_progression
+        )
 from save_states import GameSave
 from key_press import KeyboardInput
 
@@ -22,7 +29,7 @@ class Game:
         while True:
             print("\n" + "="*50)
             print("WELCOME TO [GAME NAME]")
-            print(""="*50")
+            print("="*50)
             print("1. New Game")
             print("2. Load Game")
             print("3. Quit")
@@ -43,24 +50,34 @@ class Game:
         try:
             print("\nChoose your class:")
             print("1. Warrior")
-            print("1. Mage")
-            print("1. Archer")
+            print("2. Mage")
+            print("3. Archer")
 
             while True:
                 choice = input("\nEnter choice (1-3): ")
                 if choice == "1":
                     player_class = "Warrior"
+                    break
                 elif choice == "2":
                     player_class = "Mage"
+                    break
                 elif choice == "3":
                     player_class = "Archer"
+                    break
+                else:
+                    print("Invalid choice! Please choose 1-3.")
 
-            self.player = Player()
+            self.player = Player(player_class)
             self.player_party = Party("player")
             self.player_party.add_member(self.player)
             print(f"\nWelcome, level {self.player.level} {self.player.player_class}!")
+
+            if not hasattr(self, 'story') or self.story is None:
+                self.story = create_example_story()
             self.story.start_story("start")
+            
             return True
+
         except ValueError as e:
             print(f"\nError creating character: {e}")
             return False
@@ -69,8 +86,7 @@ class Game:
         save_data = self.game_save.handle_save_menu(None, None)
         if save_data:
             # reconstruct player from save data
-            self.player = Player()
-            self.player.player_class = save_data["player"]["class"]
+            self.player = Player(save_data["player"]["class"])
             self.player.level = save_data["player"]["level"]
             self.player.experience = save_data["player"]["experience"]
             self.player.stats = save_data["player"]["stats"]
@@ -102,7 +118,7 @@ class Game:
         if result:
             if result["type"] == "narrative":
                 # display story text
-                print("\n" + "="*50))
+                print("\n" + "="*50)
                 print(result["content"]["text"])
                 print(result["content"]["description"])
 

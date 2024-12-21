@@ -1,6 +1,10 @@
 import random
+from base_classes import GameEntity
+from characters import (
+        Player, NPC, Boss, Enemy, Spell,
+        initialize_mage_spells, initialize_healer_spells
+        )
 from party import Party
-from characters import Player, NPC, Boss, Enemy, Spell
 
 class Spell:
     def __init__(self, name, mana_cost, base_damage, scaling_factor=0.5):

@@ -1,6 +1,7 @@
 import os
 import sys
 import time
+import select
 
 class KeyboardInput:
     def __init__(self):

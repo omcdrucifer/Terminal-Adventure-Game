@@ -1,4 +1,4 @@
-from party import Party
+from base_classes import GameEntity
 
 class Spell:
     def __init__(self, name, mana_cost, base_damage, scaling_factor=0.5):
@@ -7,33 +7,30 @@ class Spell:
         self.base_damage = base_damage
         self.scaling_factor = scaling_factor
 
-    def initialize_mage_spells():
-        return {
-                "Fireball": Spell("Fireball", mana_cost=20, base_damage=25, scaling_factor=0.6),
-                "Ice Shard": Spell("Ice Shard", mana_cost=15, base_damage=20, scaling_factor=0.4),
-                "Lightning Bolt": Spell("Lightning Bolt", mana_cost=25, base_damage=30, scaling_factor=0.7)
-                }
-    def initialize_healer_spells():
-        return {
-                "Heal": Spell("Heal", mana_cost=15, base_damage=20, scaling_factor=0.5),
-                "Smite": Spell("Smite", mana_cost=10, base_damage=15, scaling_factor=0.3),
-                "Blessing": Spell("Blessing", mana_cost=20, base_damage=15, scaling_factor=0.4)
-                }
+def initialize_mage_spells():
+    return {
+            "Fireball": Spell("Fireball", mana_cost=20, base_damage=25, scaling_factor=0.6),
+            "Ice Shard": Spell("Ice Shard", mana_cost=15, base_damage=20, scaling_factor=0.4),
+            "Lightning Bolt": Spell("Lightning Bolt", mana_cost=25, base_damage=30, scaling_factor=0.7)
+            }
+def initialize_healer_spells():
+    return {
+            "Heal": Spell("Heal", mana_cost=15, base_damage=20, scaling_factor=0.5),
+            "Smite": Spell("Smite", mana_cost=10, base_damage=15, scaling_factor=0.3),
+            "Blessing": Spell("Blessing", mana_cost=20, base_damage=15, scaling_factor=0.4)
+            }
 
-class Player:
+class Player(GameEntity):
+    VALID_CLASSES = ["Warrior", "Mage", "Archer"]
     def __init__(self, chosen_class):
+        if chosen_class not in self.VALID_CLASSES:
+            raise ValueError(f"Invalid class. Must be one of: {', '.join(self.VALID_CLASSES)}")
+
+        super().__init__()
         self.player_class = chosen_class
-        self.level = 1
         self.experience = 0
         self.experience_to_next_level = 100   
 #       self.max_level = N  -- if I wanted to impose a level cap
-        self.stats = {
-                "Strength": 0,
-                "Health": 0,
-                "Defense": 0,
-                "Magic": 0,
-                "Agility": 0
-                }
         self.spells = {}
         self.current_mana = 0
         self.max_mana = 0
@@ -97,18 +94,12 @@ class Player:
         self.update_stats()
         print(f"{self.player_class} leveled up to {self.level}!")
 # once I start piecing everything together, I'd like this to print the player name rather than class
-class NPC:
+class NPC(GameEntity):
     def __init__(self, npc_class, player_level):
+        super().__init__()
         self.npc_class = npc_class
         self.level = player_level
 #       self.max_level = N  -- if I wanted to impose a level cap
-        self.stats = {
-                "Strength": 0,
-                "Health": 0,
-                "Defense": 0,
-                "Magic": 0,
-                "Agility": 0
-                }
         self.spells = {}
         self.current_mana = 0
         self.max_mana = 0
@@ -153,8 +144,9 @@ class NPC:
         self.level = npc_level
         self.update_stats()
 
-class Enemy:
+class Enemy(GameEntity):
     def __init__(self, enemy_class, player_level):
+        super().__init__()
         self.enemy_class = enemy_class
         if player_level <= 2:
             self.level = 1
@@ -162,13 +154,6 @@ class Enemy:
             self.level = player_level - 1
         else:
             self.level = player_level
-        self.stats = {
-                "Strength": 0,
-                "Health": 0,
-                "Defense": 0,
-                "Magic": 0,
-                "Agility": 0
-                }
         self.experience_value = 0
         self.update_stats()
 
@@ -189,18 +174,15 @@ class Enemy:
             self.stats["Defense"] = 8 + 2 * (self.level - 1)
             self.experience_value = 25 + 5 * (self.level - 1)
 
-class Boss:
+class Boss(GameEntity):
     def __init__(self, boss_class, player_level, player_party):
+        super().__init__()
         self.boss_class = boss_class
-        player_party_size = len([member for member in player_party.members if isinstance(member, (Player, NPC))])
+        if hasattr(player_party, 'members'):
+            player_party_size = len([member for member in player_party.members if hasattr(member, 'player_class') or hasattr(member, 'npc_class')])
+        else:
+            player_party_size = 0
         self.level = player_level + (player_party_size + 1)
-        self.stats = {
-                "Strength": 0,
-                "Health": 0,
-                "Defense": 0,
-                "Magic": 0,
-                "Agility": 0
-                }
         self.experience_value = 0
         self.update_stats()
 

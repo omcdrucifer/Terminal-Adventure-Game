@@ -6,10 +6,13 @@ from datetime import datetime
 class GameSave:
     def __init__(self, save_directory="saves"):
         self.save_directory = save_directory
+        self.max_slots = 5
         if not os.path.exists(save_directory):
             os.makedirs(save_directory)
 
-    def save_game(self, player, current_location="town", filename=None):
+    def save_game(self, player, current_location="town", slot=None, auto_save=False):
+        if player is None:
+            raise ValueError("Cannot save game without a player")
         # save to a JSON
         save_data = {
                 "player": {
@@ -23,14 +26,19 @@ class GameSave:
                 "location": current_location,
                 "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 }
-        if filename is None:
-            filename = f"save_{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}.json"
-        # save to file
+        if auto_save:
+            filename = "autosave.json"
+        elif slot is not None:
+            if slot > self.max_slots:
+                raise ValueError(f"Save slot cannot exceed {self.max_slots}")
+            filename = f"save_slot_{slot}.json"
+        else:
+            filename = f"save_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
         filepath = os.path.join(self.save_directory, filename)
         with open(filepath, 'w') as f:
             json.dump(save_data, f, indent=4)
-        return filepath
-
+        return filepath   
+        
     def load_game(self, filename):
         # load from JSON
         filepath = os.path.join(self.save_directory, filename)
@@ -53,7 +61,7 @@ class GameSave:
                     "timestamp": save_data["timestamp"],
                     "player_class": save_data["player"]["class"],
                     "player_level": save_data["player"]["level"],
-                    "location"; save_data["location"]
+                    "location": save_data["location"]
                     })
         return saves
 
@@ -77,12 +85,12 @@ class GameSave:
                     continue
                 print("\nAvailable Saves:")
                 for i, save in enumerate(saves, 1):
-                    print()f"{i}. {save['timestamp']} - Level {save['player_level']} {save['player_class']}"
+                    print(f"{i}. {save['timestamp']} - Level {save['player_level']} {save['player_class']}")
                     try:
                         save_choice = int(input("\nEnter save number to load (0 to cancel): "))
                         if save_choice == 0:
                             continue
-                        if 1 <= save_choices <= len(saves):
+                        if 1 <= save_choice <= len(saves):
                             save_data = game_save.load_game(saves[save_choice-1]["filename"])
                             return save_data
                         print("\nInvalid save number!")
@@ -98,7 +106,7 @@ class GameSave:
                     print(f"Save {i}:")
                     print(f"Timestamp: {save['timestamp']}")
                     print(f"Character: Level {save['player_level']} {save['player_class']}")
-                    print(f"Location": {save['location']})
+                    print(f"Location: {save['location']}")
             elif choice == "4":
                 return None
             else:
