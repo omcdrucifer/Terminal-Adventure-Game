@@ -115,18 +115,13 @@ class Combat:
             return f"Spell hit {total_effect}"
 
     def handle_initiative(self):
-        if self.is_player_turn:
-            if not self.get_next_active_player():
-                self.is_player_turn = False
-                self.active_enemy_index = 0
-                self.get_next_active_enemy()
-        else:
-            if not self.get_next_active_enemy():
-                self.is_player_turn = True
-                self.active_player_index = 0
-                self.get_next_active_player()
+        self.current_turn_index = (self.current_turn_index + 1) % len(self.initiative_order)
+        self.is_player_turn = isinstance(self.get_active_combatant(), (Player, NPC))
 
     def attack(self, target_index=None):
+        if not self.player_party.is_party_alive():
+            return "DEFEAT"
+
         if self.is_player_turn:
             attacker = self.player_party.members[self.active_player_index]
             if target_index is None:
@@ -135,10 +130,9 @@ class Combat:
         else:
             attacker = self.enemy_party.members[self.active_enemy_index]
             active_members = self.player_party.get_active_members()
-            if active_members:
-                defender = random.choice(active_members)
-            else:
+            if not active_members:
                 return "DEFEAT"
+            defender = random.choice(active_members)
 
         hit_chance = 75
         if random.randint(1, 100) <= hit_chance:
@@ -154,15 +148,13 @@ class Combat:
                 defender.stats["Health"] = 0
                 if isinstance(defender, (Enemy, Boss)) and isinstance(attacker, Player):
                     self.handle_experience(attacker, defender)
-                    if not self.get_next_active_enemy():
+                    if not self.enemy_party.get_active_members():
                         return "VICTORY"
-                else:
-                    if not self.get_next_active_player:
-                        return "DEFEAT"
-                return f"DEFEAT_{self.get_combatant_type(defender)}"
+                elif not self.player_party.get_active_members():
+                    return "DEFEAT"
             return f"HIT_{actual_damage}"
         else:
-            return "Miss!"
+            return "MISS"
 
     def handle_experience(self, attacker, defeated_enemy):
         initial_level = attacker.level
@@ -171,9 +163,7 @@ class Combat:
             self.player_party.synchronize_level(attacker.level)
 
     def get_active_combatant(self):
-        if self.is_player_turn:
-            return self.player_party.members[self.active_player_index]
-        return self.enemy_party.members[self.active_enemy_index]
+        return self.initiative_order[self.current_turn_index]
 
     def get_combat_status(self):
         return (

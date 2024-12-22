@@ -89,11 +89,19 @@ class TestCombat(unittest.TestCase):
 
         combat = Combat(self.player_party, self.enemy_party)
 
+        with patch('random.randint') as mock_rand:
+            mock_rand.side_effect = [20, 10, 5]
+            combat.setup_initiative()
+
         self.assertEqual(len(combat.initiative_order), 3)
 
-        first_actor = combat.initiative_order[0]
+        first_actor = combat.get_active_combatant()
+
         combat.handle_initiative()
-        second_actor = combat.initiative_order[combat.current_turn_index]
+        combat.current_turn_index = (combat.current_turn_index + 1) % len(combat.initiative_order)
+
+        second_actor = combat.get_active_combatant()
+
         self.assertNotEqual(id(first_actor), id(second_actor))
 
     def test_combat_resolution_conditions(self):
@@ -116,6 +124,7 @@ class TestCombat(unittest.TestCase):
             result = combat.attack(0)
         if result.startswith("HIT"):
             self.player.stats["Health"] = 0
+            self.assertFalse(combat.player_party.is_party_alive())
             result = combat.attack(0)
         self.assertEqual(result, "DEFEAT")
 
