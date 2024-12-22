@@ -7,11 +7,12 @@
             "Strength": 20,
             "Health": 100,
             "Defense": 15,
+            "Magic": 0,
             "Agility": 0
         },
         "current_mana": 0,
         "max_mana": 0
     },
     "location": "town",
-    "timestamp": "2024-12-22 01:58:57"
+    "timestamp": "2024-12-22 02:04:29"
 }
