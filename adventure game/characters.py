@@ -203,4 +203,3 @@ class Boss(GameEntity):
             self.stats["Defense"] = 15 + 4 * (self.level - 1)
             self.experience_value = 55 + 10 * (self.level - 1)
 
-
