@@ -2,25 +2,41 @@ THIS IS A PERSONAL PORTFOLIO PROJECT
 
 CHOOSE YOUR OWN ADVENTURE TEXT BASED GAME
 
-My goal is to try and apply what I've learned in Python and challenge myself to go further
-by building a choose your own adventure game. 
+This CYOA is written entirely in Python and is meant to play
+like an old school text based RPG.
 
-I ultimately settled on a class structure with methods to handle leveling classes. It was ultimately much simpler than trying to approach it with JSON, graph, or tree. 
-By implementing class objects I was able to establish a baseline governance for player level and experience gain and a enemy class that levels based on the player level.
-I have a base class object to handle combat and experience awards for the player when they defeat an enemy. 
-Everything is automated with a hundred lines of code rather than using several hundred
-If I were to try and use something more advanced than a class system, it would probably be a database and table, even if it was SQLite. But I haven't started the 
-database courses yet and only have minimal experience with SQLite from one Flask course. 
+To date it has logic for:
+    - Character Classes: Player, NPC, Enemy, Boss
+    - Combat: Solo, Group, handles initiative
+    - Party: Party system can manage both player and enemy parties
+    - Story: Tree system to control story flow
+    - Game Loop: Menu system and game control flow
+    - Save States: Creates save states with JSON
+    - Keymap: Allows me to map buttons to quick menus
 
-I could always refactor once I get through the database course, but for now this is the simplest solution I could come up with. 
+Some key features are:
+    - Boss scaling: bosses are scaled by the number of party members + 1
+    - World scaling: NPCs and non-boss enemies scale to the player's level
+    - Classes: Currently there are 3 playable classes and three supporting
+    classes, and six enemy classes (3 boss and 3 non-boss)
+    - Menu system: The game loop logic includes menus for:
+        - Starting a game
+        - Creating a game
+        - Creating a save
+        - Loading a save
+        - Combat choices
+        - Story choices
+        - Quitting the game
+    - Rest system: Resting will restore the player's mana and health
+    scales to the appropriate player level
+    - Party management: The party logic allows for adding and removing
+    members of a party. This allows for recruiting in story and removing
+    party members either if deceased or having abandoned the party. 
 
-12-17-24
-
-Refactored Classes and Combat system. Added functionality to account for magic and agility bonuses when determining initiative.
-Party now manages enemy and player parties
-Combat can handle magic damage and healing. 
-Roll for initiative! 
-
-I'm building toward allowing more player choice in combat, and will be attempting to build in a save and light menu system. 
-
-I plan to start the tree next. 
+A lot of what is in place is boiler plate and can/should be built out.
+For example there are only three spells available for each magic class.
+I want/should build out a spell system that allows learning more spells
+as the character levels. I may consider allowing more classes in the 
+future but for now I think I should leave it where it is. I have logic
+in place that is currently not being implemented to allow me to impose
+a level cap if I feel that it is necessary to do so. 
