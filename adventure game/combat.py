@@ -1,7 +1,7 @@
 import random
 from base_classes import GameEntity
 from characters import (
-        Player, NPC, Boss, Enemy, Spell,
+        Player, NPC, Boss, Enemy,
         initialize_mage_spells, initialize_healer_spells
         )
 from party import Party
@@ -202,6 +202,9 @@ class Combat:
                 if isinstance(active_combatant, Player):
                     print(f"\n{active_combatant.player_class}'s turn!")
                     print("1. Attack")
+                   # print("2. Cast Spell") commented out for testing since the cooresponding logic
+                   # print("3. Use Item")   isn't implemented yet
+                   # print("4. Flee")
                     # add more actions here like use item, cast spell, etc
 
                     while True:
@@ -220,6 +223,20 @@ class Combat:
                                     print("Invalid target!")
                             else:
                                 print("Invalid action!")
+                            #if action == 2: # cast spell
+                            #    spell_name = input("Choose Spell: ")
+                            #    print("Choose target:")
+                            #    for i, status, in enumerate(enemy_status):
+                            #        print(f"{i + 1}. {status}")
+                            #    target = int(input(f"\nSelect target (1-{len(enemy_status)}): ")) - 1
+                            #    if 0 <= target < len(enemy_status):
+                            #        result = combat.cast_spell(Player, spell_name=spell_name, target=target)
+                            #        handle_combat_result(result)
+                            #        break
+                            #    else:
+                            #        print("Invalid target!")
+                            #else:
+                            #    print("Invalid action!") this logic is unfinished. need to get the spell handling right
                         except ValueError:
                             print("Please enter a valid number!")
                 else:
