@@ -65,7 +65,7 @@ class GameSave:
                     })
         return saves
 
-    def handle_save_menu(game_save, player, current_location):
+    def handle_save_menu(self, player, current_location):
         while True:
             print("\nSave Game Menu:")
             print("1. Create New Save")
@@ -75,31 +75,34 @@ class GameSave:
 
             choice = input("\nEnter your choice (1-4): ")
             if choice == "1":
-                filepath = game_save.save_game(player, current_location)
-                print(f"\nGame saved successfully to {filepath}")
+                if player is None:
+                    print("\nNo active game to save!")
+                    continue
+                filepath = self.save_game(player, current_location)
+                print("\nGame saved successfully to (filepath)")
                 return None
             elif choice == "2":
-                saves = game_save.list_saves()
+                saves = self.list_saves()
                 if not saves:
-                    print(f"\nNo save files found!")
+                    print("\nNo save files found!")
                     continue
                 print("\nAvailable Saves:")
                 for i, save in enumerate(saves, 1):
                     print(f"{i}. {save['timestamp']} - Level {save['player_level']} {save['player_class']}")
-                    try:
-                        save_choice = int(input("\nEnter save number to load (0 to cancel): "))
-                        if save_choice == 0:
-                            continue
-                        if 1 <= save_choice <= len(saves):
-                            save_data = game_save.load_game(saves[save_choice-1]["filename"])
-                            return save_data
-                        print("\nInvalid save number!")
-                    except ValueError:
-                        print("\nPlease enter a valid number!")
+                try:
+                    save_choice = int(input("\nEnter save number to load (0 to cancel): "))
+                    if save_choice == 0:
+                        continue
+                    if 1 <= save_choice <= len(saves):
+                        save_data = self.load_game(saves[save_choice-1]["filename"])
+                        return save_data
+                    print("\nInvalid save number!")
+                except ValueError:
+                    print("\nPlease enter a valid number!")
             elif choice == "3":
-                saves = game_save.list_saves()
+                saves = self.list_saves()
                 if not saves:
-                    print(f"\nNo save files found!")
+                    print("\nNo save files found!")
                     continue
                 print("\nAvailable Saves:")
                 for i, save in enumerate(saves, 1):

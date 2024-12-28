@@ -1,16 +1,27 @@
+import os
+import sys
 import unittest
 from unittest.mock import Mock, patch
 import time
-import os
 import json
-from characters import Player, NPC, Enemy, Boss, Spell
-from combat import Combat, handle_combat_encounter 
-from tree import StoryTree, create_story
-from story_content import get_story_content
-from game_loop import Game
-from party import Party
-from save_states import GameSave
-from key_press import KeyboardInput
+
+current_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(current_dir)
+sys.path.append(parent_dir)
+
+try:
+    from characters import Player, NPC, Enemy, Boss, Spell
+    from combat import Combat, handle_combat_encounter
+    from tree import StoryTree, create_story
+    from story_content import get_story_content
+    from game_loop import Game
+    from party import Party
+    from save_states import GameSave
+    from key_press import KeyboardInput
+except ImportError as e:
+    print(f"Error importing game modules: {e}")
+    print(f"Python path: {sys.path}")
+    sys.exit(1)
 
 class TestPlayer(unittest.TestCase):
     def setUp(self):
@@ -310,11 +321,12 @@ class TestGame(unittest.TestCase):
         self.game.game_save.save_game(self.game.player, "town")
         with patch('builtins.input', return_value=1):
             self.game.player = Player("Warrior")
-        self.game.player.experience = original_xp
+        self.game.player.experience = 0
 
         with patch('builtins.input', side_effect=['2', '1']):
-            self.game.load_game()
-        self.assertEqual(self.game.player.experience, original_xp)
+            loaded = self.game.load_game()
+            self.assertTrue(loaded)
+            self.assertEqual(self.game.player.experience, original_xp)
 
     @patch('builtins.input', side_effect=['5', 'invalid', '1']) # test invalid inputs before valid
     def test_input_validation(self, mock_input):
