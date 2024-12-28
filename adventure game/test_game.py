@@ -3,18 +3,12 @@ from unittest.mock import Mock, patch
 import time
 import os
 import json
-from base_classes import GameEntity
-from characters import (
-        Player, NPC, Enemy, Boss, Spell,
-        initialize_mage_spells, initialize_healer_spells
-        )
-from party import Party
-from combat import Combat 
-from tree import (
-        StoryNode, StoryChoice, StoryTree,
-        create_example_story, handle_story_progression
-        )
+from characters import Player, NPC, Enemy, Boss, Spell
+from combat import Combat, handle_combat_encounter 
+from tree import StoryTree, create_story
+from story_content import get_story_content
 from game_loop import Game
+from party import Party
 from save_states import GameSave
 from key_press import KeyboardInput
 
@@ -128,6 +122,37 @@ class TestCombat(unittest.TestCase):
             result = combat.attack(0)
         self.assertEqual(result, "DEFEAT")
 
+    def test_combat_actions(self):
+        self.player_party.add_member(self.player)
+        self.enemy_party.add_member(self.enemy)
+        combat = Combat(self.player_party, self.enemy_party)
+
+        mage = Player("Mage")
+        self.player_party.add_member(mage)
+        spells = combat.get_available_spells(mage)
+        self.assertTrue(len(spells) > 0)
+        spell_name = list(spells.keys())[0]
+        result = combat.cast_spell(mage, spell_name, self.enemy)
+        self.assertTrue(result.startswith("Spell hit") or result.startswith("DEFEAT"))
+
+        with patch('random.randint', return_value=25):
+            combat.is_player_turn = True
+            result = combat.handle_combat_action(mage, "flee")
+            self.assertEqual(result, "FLED")
+
+        with patch('random.randint', side_effect=[75,
+                                                  75,
+                                                  20,
+                                                  5]):
+            combat.is_player_turn = True
+            result = combat.handle_combat_action(mage, "flee")
+            self.assertEqual(result, "FAILED_FLEE")
+
+            result = combat.handle_combat_action(mage, "attack", target_index=0)
+            self.assertTrue(result.startswith("HIT_") or
+                            result == "VICTORY" or
+                            result == "DEFEAT")
+
 class TestKeyboardInput(unittest.TestCase):
     def setUp(self):
         self.keyboard = KeyboardInput()
@@ -189,9 +214,86 @@ class TestGameSave(unittest.TestCase):
         # verify data
         self.assertEqual(save_data["player"]["level"], original_level)
 
+class TestStory(unittest.TestCase):
+    def setUp(self):
+        # Match the exact story content from story_content.py
+        self.test_story_content = {
+            "start": {
+                "type": "narrative",
+                "content": {
+                    "text": "You stand at the entrance of the ancient forest...",
+                    "description": "A peaceful morning greets you..."
+                },
+                "choices": [
+                    {
+                        "id": "choice_solo",
+                        "text": "Take the narrow path through the dense forest",
+                        "next_node": "solo_path",
+                        "requirements": {"party_size": {"max": 1}}
+                    },
+                    {
+                        "id": "choice_village",
+                        "text": "Visit the nearby village to seek companions",
+                        "next_node": "village_path",
+                        "requirements": {"party_size": {"max": 3}}
+                    }
+                ]
+            },
+            "solo_path": {
+                "type": "combat",
+                "content": {
+                    "enemies": [("Goblin", 1)],
+                    "description": "A goblin jumps out from behind a tree!",
+                    "victory_node": "post_solo_combat",
+                    "defeat_node": "game over"
+                }
+            }
+        }
+        
+        self.patcher = patch('story_content.get_story_content')
+        self.mock_get_content = self.patcher.start()
+        self.mock_get_content.return_value = self.test_story_content
+        
+        self.story = create_story()
+        self.player_party = Party("player")
+        self.player_party.add_member(Player("Warrior"))
+
+    def test_story_creation(self):
+        self.assertIn("start", self.story.nodes)
+        self.assertIn("solo_path", self.story.nodes)
+        
+        # Verify exact content matches
+        start_node = self.story.nodes["start"]
+        self.assertEqual(start_node.content["text"], "You stand at the entrance of the ancient forest...")
+        self.assertEqual(start_node.content["description"], "A peaceful morning greets you...")
+        self.assertEqual(len(start_node.choices), 2)
+
+    def test_story_navigation(self):
+        test_party = Party("player")
+        test_party.add_member(Player("Warrior"))
+        
+        self.story.start_story("start")
+        available_choices = self.story.get_available_choices(test_party)
+        
+        self.assertEqual(len(available_choices), 2)
+        choice_ids = [choice.choice_id for choice in available_choices]
+        self.assertIn("choice_solo", choice_ids)
+        self.assertIn("choice_village", choice_ids)
+
 class TestGame(unittest.TestCase):
     def setUp(self):
-        self.game = Game()
+        test_story_content = {
+                "start": {
+                    "type": "narrative",
+                    "content": {
+                        "text": "Test game start",
+                        "description": "Test game"
+                        },
+                    "choices": []
+                    }
+                }
+        with patch('story_content.get_story_content', return_value=test_story_content):
+            self.game = Game()
 
     def test_game_initialization(self):
         required_attributes = ['player', 'player_party', 'current_location', 'story']
@@ -225,9 +327,10 @@ class TestGame(unittest.TestCase):
             self.game.start_new_game()
         # verify story initialized
         self.assertIsNotNone(self.game.story.current_node)
+        self.assertEqual(self.game.story.current_node.node_id, "start")
         # test choice availability
         choices = self.game.story.get_available_choices(self.game.player_party)
-        self.assertGreater(len(choices), 0)
+        self.assertIsNotNone(choices)
 
 if __name__ == '__main__':
     unittest.main(verbosity=2) # increased verbosity for more detailed output

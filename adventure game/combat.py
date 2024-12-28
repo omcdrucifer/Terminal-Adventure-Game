@@ -1,17 +1,6 @@
 import random
-from base_classes import GameEntity
-from characters import (
-        Player, NPC, Boss, Enemy,
-        initialize_mage_spells, initialize_healer_spells
-        )
+from characters import Player, NPC, Boss, Enemy, Spell
 from party import Party
-
-class Spell:
-    def __init__(self, name, mana_cost, base_damage, scaling_factor=0.5):
-        self.name = name
-        self.mana_cost = mana_cost
-        self.base_damage = base_damage
-        self.scaling_factor = scaling_factor
 
 class Combat:
     def __init__(self, player_party, enemy_party):
@@ -80,7 +69,7 @@ class Combat:
         if hasattr(combatant, 'player_class') and combatant.player_class in self.spell_lists:
             return self.spell_lists[combatant.player_class]
         return {}
-    
+
     def can_cast_spell(self, caster, spell):
         return hasattr(caster, 'current_mana') and caster.current_mana >= spell.mana_cost
 
@@ -125,7 +114,7 @@ class Combat:
         if self.is_player_turn:
             attacker = self.player_party.members[self.active_player_index]
             if target_index is None:
-                target_index - self.active_enemy_index
+                target_index = self.active_enemy_index
             defender = self.enemy_party.members[target_index]
         else:
             attacker = self.enemy_party.members[self.active_enemy_index]
@@ -180,87 +169,86 @@ class Combat:
     def handle_combat_action(self, combatant, action_type, target_index=None, spell_name=None):
         if action_type == "attack":
             return self.attack(target_index)
+        elif action_type == "flee":
+            flee_chance = random.randint(1, 100)
+            if flee_chance <= 50:
+                return "FLED"
+            return "FAILED_FLEE"  # Changed from "FAILED FLEE" to "FAILED_FLEE"
         elif action_type == "cast_spell":
             target = self.enemy_party.members[target_index]
             return self.cast_spell(combatant, spell_name, target)
-        return "Invalid action"
+        return "INVALID_ACTION"    
 
-    def handle_combat_encounter(player_party, enemy_party):
-        combat = Combat(player_party, enemy_party)
-        while True:
-            party_status, enemy_status = combat.get_combat_status()
-            print("\nCurrent Combat Status:")
-            print("Player Party:")
-            for status in party_status:
-                print(f"- {status}")
-            print("Enemy Party:")
-            for status in enemy_status:
-                print(f"- {status}")
-
-            if combat.is_player_turn:
-                active_combatant = combat.get_active_combatant()
-                if isinstance(active_combatant, Player):
-                    print(f"\n{active_combatant.player_class}'s turn!")
-                    print("1. Attack")
-                   # print("2. Cast Spell") commented out for testing since the cooresponding logic
-                   # print("3. Use Item")   isn't implemented yet
-                   # print("4. Flee")
-                    # add more actions here like use item, cast spell, etc
-
-                    while True:
-                        try:
-                            action = int(input("Choose your action (1-1):")) # adjust as more choices are added
-                            if action == 1: # attack
-                                print("Choose target:")
-                                for i, status, in enumerate(enemy_status):
-                                    print(f"{i + 1}. {status}")
-                                target = int(input(f"\nSelect target (1-{len(enemy_status)}): ")) - 1
-                                if 0 <= target < len(enemy_status):
-                                    result = combat.attack(target)
-                                    handle_combat_result(result)
-                                    break
-                                else:
-                                    print("Invalid target!")
-                            else:
-                                print("Invalid action!")
-                            #if action == 2: # cast spell
-                            #    spell_name = input("Choose Spell: ")
-                            #    print("Choose target:")
-                            #    for i, status, in enumerate(enemy_status):
-                            #        print(f"{i + 1}. {status}")
-                            #    target = int(input(f"\nSelect target (1-{len(enemy_status)}): ")) - 1
-                            #    if 0 <= target < len(enemy_status):
-                            #        result = combat.cast_spell(Player, spell_name=spell_name, target=target)
-                            #        handle_combat_result(result)
-                            #        break
-                            #    else:
-                            #        print("Invalid target!")
-                            #else:
-                            #    print("Invalid action!") this logic is unfinished. need to get the spell handling right
-                        except ValueError:
-                            print("Please enter a valid number!")
-                else:
-                    # NPC automatic attack
-                    result = combat.attack()
-                    handle_combat_result(result)
-            else:
-                # enemy turn
-                result = combat.attack()
-                handle_combat_result(result)
-            # check for combat end
-            if result in ["VICTORY", "DEFEAT"]:
-                return result == "VICTORY"
-
-    def handle_combat_result(result):
-        if result.startswith("HIT"):
-            damage = result.split("_")[1]
-            print(f"Hit! Dealt {damage} damage!")
+    def handle_combat_result(self, result):
+        if isinstance(result, str):
+            if result.startswith("HIT_"):
+                damage = result.split("_")[1]
+                print(f"Hit! Dealt {damage} damage!")
         elif result == "MISS":
             print("Attack missed!")
         elif result.startswith("DEFEAT_"):
             defeated_type = result.split("_")[1]
             print(f"{defeated_type} was defeated!")
+        elif result == "FLED":
+            print("Returned to town!")
         elif result == "VICTORY":
             print("Victory! All enemies defeated!")
         elif result == "DEFEAT":
             print("Defeat! Your party has fallen!")
+
+def handle_combat_encounter(self):
+    while True:
+        # Check victory/defeat conditions first
+        if not self.enemy_party.is_party_alive():
+            return "VICTORY"
+        if not self.player_party.is_party_alive():
+            return "DEFEAT"
+
+        party_status, enemy_status = self.get_combat_status()
+        print("\nCurrent Combat Status:")
+        print("Player Party:")
+        for status in party_status:
+            print(f"- {status}")
+
+        if self.is_player_turn:
+            active_combatant = self.get_active_combatant()
+            if isinstance(active_combatant, Player):
+                print(f"\n{active_combatant.player_class}'s turn!")
+                print("1. Attack")
+                print("2. Cast Spell")
+                print("3. Use Item")
+                print("4. Flee")
+
+                try:
+                    action = int(input("Choose your action (1-4): "))
+                    if action == 1:  # attack
+                        print("Choose target:")
+                        for i, status in enumerate(enemy_status):
+                            print(f"{i + 1}. {status}")
+                        target = int(input(f"\nSelect target (1-{len(enemy_status)}): ")) - 1
+                        if 0 <= target < len(enemy_status):
+                            result = self.attack(target)
+                            self.handle_combat_result(result)
+                            self.handle_initiative()
+                            return result if result in ["VICTORY", "DEFEAT"] else None
+                    elif action == 4:  # flee
+                        flee_chance = random.randint(1, 100)
+                        if flee_chance <= 50:
+                            return "FLED"
+                        print("Failed to flee!")
+                        self.handle_initiative()
+                except ValueError:
+                    print("Please enter a valid number!")
+                    continue
+            else:
+                # NPC automatic attack
+                result = self.attack()
+                self.handle_combat_result(result)
+                self.handle_initiative()
+                return result if result in ["VICTORY", "DEFEAT"] else None
+        else:
+            # Enemy attack
+            result = self.attack()
+            self.handle_combat_result(result)
+            self.handle_initiative()
+            return result if result in ["VICTORY", "DEFEAT"] else None 

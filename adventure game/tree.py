@@ -1,12 +1,8 @@
 # Tree Node for the story system
-from math import inf
-from base_classes import GameEntity
-from characters import (
-        Player, NPC, Boss, Enemy, Spell,
-        initialize_mage_spells, initialize_healer_spells
-        )
+from characters import Player, NPC
 from combat import Combat
 from party import Party
+from story_content import get_story_content  
 
 class StoryNode:
     def __init__(self, node_id, node_type):
@@ -50,99 +46,44 @@ class StoryTree:
         for req_type, req_value in requirements.items():
             if req_type == "party_size":
                 party_size = len(party.members)
-                if party_size < req_value.get("min", 0) or \
-                        party_size > req_value.get("max", float('inf')):
-                            return False
-            elif req_type == "has_class":
-                if not any(hasattr(member, "player_class") and
-                           member.player_class == req_value
-                           for member in party.members):
-                    return False
-            elif req_type == "min_level":
-                if party.get_average_level() < req_value:
+                min_size = req_value.get("min", 0)
+                max_size = req_value.get("max", float('inf'))
+                # Strict check for party size requirements
+                if not (min_size <= party_size <= max_size):
                     return False
         return True
 
-# example usage, does not reflect the actual story that will be used
-def create_example_story():
+# I decided in an effort to keep things contained and easy to maintain, I will move the story nodes that construct the
+# story to another file and rewrote the story function to handle that
+
+def create_story():
     story = StoryTree()
+    story_data = get_story_content()
+    
+    print("\nDebug - Story data nodes:", list(story_data.keys()))
 
-    # Starting narrative node
-    start = StoryNode("start", "narrative")
-    start.content = {
-            "text": "You stand at the entrance of the ancient forest. The path ahead splits in two directions.",
-            "description": "A peaceful morning greets you as you prepare for adventure."
-            }
+    # First pass: Create all nodes
+    for node_id, node_data in story_data.items():
+        node = StoryNode(node_id, node_data["type"])
+        node.content = node_data.get("content", {})
+        story.add_node(node)
+        print(f"Debug - Created node: {node_id}")
 
-    # Solo path choice
-    solo_choice = StoryChoice(
-            "solo_path",
-            "Take the narrow path through the dense forest",
-            "solo_combat",
-            {"party_size": {"max": 1}}
-            )
+    # Second pass: Add choices
+    for node_id, node_data in story_data.items():
+        if "choices" in node_data:
+            node = story.nodes[node_id]
+            for choice_data in node_data["choices"]:
+                choice = StoryChoice(
+                    choice_data["id"],
+                    choice_data["text"],
+                    choice_data["next_node"],
+                    choice_data.get("requirements", {})
+                )
+                node.choices.append(choice)
+                print(f"Debug - Added choice to {node_id}: {choice.text} with requirements {choice.requirements}")
 
-    # Party path choice
-    party_choice = StoryChoice(
-            "party_path",
-            "Visit the nearby village to seek companions",
-            "village_recruitment",
-            {"party_size": {"max": 3}}
-            )
-
-    start.choices = [solo_choice, party_choice]
-
-    # Solo combat node
-    solo_combat = StoryNode("solo_combat", "combat")
-    solo_combat.content = {
-            "enemies": [("Goblin", 1)],
-            "description": "A goblin jumps out from behind a tree!",
-            "victory_node": "post_solo_combat",
-            "defeat_node": "game_over"
-            }
-
-    # Recruitment node
-    recruitment = StoryNode("village_recruitment", "recruitment")
-    recruitment.content = {
-            "available_npcs": [
-                {"class": "Fighter", "name": "Roland"},
-                {"class": "Healer", "name": "Elena"},
-                {"class": "Rogue", "name": "Thresh"}
-                ],
-            "max_recruits": 2,
-            "next_node": "village_quest"
-            }
-
-    # Village quest node with party size requirement
-    village_quest = StoryNode("village_quest", "choice")
-    village_quest.content = {
-            "text": "The village elder speaks of a dragon threatening their lands.",
-            "description": "You notice your companions grip their weapons tightly."
-            }
-
-    # Add choices based on party composition
-    quest_choice1 = StoryChoice(
-            "accept_quest",
-            "Accept the quest to slay the dragon",
-            "dragon_path",
-            {"party_size": {"min": 2}, "min_level": 3}
-            )
-
-    quest_choice2 = StoryChoice(
-            "training_first",
-            "Suggest training together before taking on the dragon",
-            "training_grounds",
-            {"party_size": {"min": 1}}
-            )
-
-    village_quest.choices = [quest_choice1, quest_choice2]
-
-    # Add all nodes to the story
-    story.add_node(start)
-    story.add_node(solo_combat)
-    story.add_node(recruitment)
-    story.add_node(village_quest)
-
+    story.start_story("start")
     return story
 
 def handle_story_progression(story, party, choice=None):

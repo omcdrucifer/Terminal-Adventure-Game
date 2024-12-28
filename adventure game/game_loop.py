@@ -1,17 +1,10 @@
 # Game flow control
-from math import inf
+import time
 import random
-from base_classes import GameEntity
-from characters import (
-        Player, NPC, Boss, Enemy, Spell,
-        initialize_mage_spells, initialize_healer_spells
-        )
+from characters import Player, NPC, Boss, Enemy, Spell
 from party import Party
 from combat import Combat 
-from tree import (
-        StoryNode, StoryChoice, StoryTree,
-        create_example_story, handle_story_progression
-        )
+from tree import create_story, handle_story_progression
 from save_states import GameSave
 from key_press import KeyboardInput
 
@@ -22,7 +15,7 @@ class Game:
         self.player_party = None
         self.current_location = "town"
         self.playing = True
-        self.story = create_example_story() # initialize story
+        self.story = create_story() # initialize story
         self.keyboard = KeyboardInput()
 
     def main_menu(self):
@@ -73,7 +66,7 @@ class Game:
             print(f"\nWelcome, level {self.player.level} {self.player.player_class}!")
 
             if not hasattr(self, 'story') or self.story is None:
-                self.story = create_example_story()
+                self.story = create_story()
             self.story.start_story("start")
             
             return True
