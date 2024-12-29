@@ -1,7 +1,7 @@
 # Game flow control
 import time
 import random
-from characters import Player, NPC, Boss, Enemy, Spell, Item
+from characters import Player, NPC, Boss, Enemy, Spell, Item 
 from party import Party
 from combat import Combat 
 from tree import create_story, handle_story_progression
@@ -259,6 +259,113 @@ class Game:
         # auto save before fight
         self.game_save.save_game(self.player, self.current_location, auto_save=True)
         return combat.handle_combat_encounter()
+
+    def check_recruitment_requirements(self, requirements):
+        if not requirements:
+            return True, ""
+
+        if "min_level" in requirements:
+            if self.player.level < requirements["min_level"]:
+                return False, f"You must be at least level {requirements['min_level']}"
+
+        if "max_party_size" in requirements:
+            if len(self.player_party.members) >= requirements["max_party_size"]:
+                return False, "Your party is full"
+
+        if "class_not_in_party" in requirements:
+            for member in self.player_party.members:
+                if (hasattr(member, 'player_class') and
+                    member.player_class == requirements["class_not_in_party"] or \
+                            hasattr(member, 'npc_class') and
+                    member.npc_class == requirements["class_not_in_party"]):
+                    return False, f"You already have a {requirements['class_not_in_party']} in your party"
+
+        if "items_required" in requirements:
+            for item_name in requirements["items_required"]:
+                if self.player.inventory.get_item_count(item_name) <= 0:
+                    return False, "You need a {item_name} to recruit this character"
+
+        return True, ""
+    
+    def handle_recruitment_consequences(self, consequences, accepted):
+        if not consequences:
+            return
+
+        consequence_type = "accept" if accepted else "reject"
+        if consequence_type not in consequences:
+            return
+
+        result = consequences[consequence_type]
+
+        if "items_gained" in result:
+            for item in result["items_gained"]:
+                success, message = self.player.inventory.add_item(
+                        item["name"],
+                        item["quantity"]
+                        )
+                if success:
+                    print(f"\nReceived {item['quantity']} {item['name']}(s)")
+                else:
+                    print(f"\nCouldn't receive {item['name']}: {message}")
+
+        if "items_consumed" in result:
+            for item in result["items_consumed"]:
+                success, message = self.player.inventory.remove_item(
+                        item["name"],
+                        item["quantity"]
+                        )
+                if not success:
+                    print(f"\nWarning: Couldn't consume {item['name']}: {message}")
+
+        if "reputation_change" in result:
+            change = result["reputation_change"]
+            print(f"\nReputation {'increased' if change > 0 else 'decreased'}")
+
+    def handle_recruitment(self, content):
+        if not content or 'npc_class' not in content:
+            print("Error: Invalid recruitment content")
+            return False
+
+        print(f"\n{content.get('description', 'You encounter a potential ally.')}")
+
+        if len(self.player_party.members) >= 4:
+            print("\nYour party is already full!")
+            return False
+
+        if 'requirements' in content:
+            meets_requirements, failure_reason = self.check_recruitment_requirements(content['requirements'])
+            if not meets_requirements:
+                print(f"\n{failure_reason}")
+                self.story.current_node = self.story.nodes[content['next_node_reject']]
+                return False
+
+        while True:
+            choice = input("\nWould you like them to join your party? (y/n): ").lower()
+            if choice in ('y', 'n'):
+                break
+            print("Please enter 'y' or 'n'")
+
+        if choice == 'y':
+            try:
+                new_npc = NPC(content['npc_class'], self.player.level)
+                self.player_party.add_member(new_npc)
+                print(f"\nThe {content['npc_class']} has joined your party!")
+
+                if 'consequences' in content:
+                    self.handle_recruitment_consequences(content['consequences'], accepted=True)
+
+                self.story.current_node = self.story.nodes[content['next_node_accept']]
+                return True
+            except Exception as e:
+                print(f"\nError recruiting NPC: {e}")
+                self.story.current_node = self.story.nodes[content['next_node_reject']]
+                return False
+        else:
+            print("\nYou decide not to recruit them")
+            if 'consequences' in content:
+                self.handle_recruitment_consequences(content['consequences'], accepted=False)
+            self.story.current_node = self.story.nodes[content['next_node_reject']]
+            return False
 
 if __name__ == "__main__":
     game = Game()

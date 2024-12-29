@@ -4,15 +4,19 @@ import unittest
 from unittest.mock import Mock, patch
 import time
 import json
+from pathlib import Path
 
-current_dir = os.path.dirname(os.path.abspath(__file__))
-parent_dir = os.path.dirname(current_dir)
-sys.path.append(parent_dir)
+test_dir = Path(__file__).parent
+project_dir = test_dir.parent
+sys.path.append(str(project_dir))
 
 from base_classes import GameEntity
-from characters import Player, NPC, Enemy, Boss, Spell, Item, Inventory, initialize_common_items
-from combat import Combat, handle_combat_encounter
-from tree import StoryTree, create_story
+from characters import (
+        Player, NPC, Enemy, Boss, Spell, Inventory,
+        initialize_common_items, initialize_mage_spells, initialize_healer_spells
+        )
+from combat import Combat
+from tree import StoryTree, create_story, StoryNode, StoryChoice, handle_story_progression
 from story_content import get_story_content
 from game_loop import Game
 from party import Party
@@ -310,50 +314,196 @@ class TestGameSave(unittest.TestCase):
         # verify data
         self.assertEqual(save_data["player"]["level"], original_level)
 
+class TestRecruitment(unittest.TestCase):
+    def setUp(self):
+        self.game = Game()
+        with patch('builtins.input', return_value='1'):
+            self.game.start_new_game()
+
+        self.test_recruitment_content = {
+                "npc_class": "Healer",
+                "name": "Elena",
+                "description": "Test description",
+                "requirements": {
+                    "min_level": 2,
+                    "max_party_size": 3,
+                    "class_not_in_party": "Healer",
+                    "items_required": ["Health Potion"]
+                    },
+                "consequences": {
+                    "accept": {
+                        "items_gained": [
+                            {"name": "Healing Staff", "quantity": 1},
+                            {"name": "Mana Potion", "quantity": 2}
+                            ],
+                        "items_consumed": [
+                            {"name": "Health Potion", "quantity": 1}
+                            ]
+                        },
+                    "reject": {
+                        "reputation_change": -5
+                        }
+                    },
+                "next_node_accept": "village_square",
+                "next_node_reject": "forest_entrance",
+                }
+
+    def test_recruitment_requirements(self):
+        # test level requirement
+        meets_req, reason = self.game.check_recruitment_requirements(
+                {"min_level": 3}
+                )
+        self.assertFalse(meets_req)
+        self.assertIn("level", reason.lower())
+        # test max party size
+        meets_req, reason = self.game.check_recruitment_requirements(
+                {"max_party_size": 4}
+                )
+        self.assertTrue(meets_req)
+        # test class restriction
+        npc = NPC("Healer", self.game.player.level)
+        self.game.player_party.add_member(npc)
+        meets_req, reason = self.game.check_recruitment_requirements(
+                {"class_not_in_party": "Healer"}
+                )
+        self.assertFalse(meets_req)
+        self.assertIn("already have", reason.lower())
+
+    def test_recruitment_consequences(self):
+        # test item gains
+        initial_count = self.game.player.inventory.get_item_count("Health Potion")
+        consequences = {
+                "accept": {
+                    "items_gained": [
+                        {"name": "Health Potion", "quantity": 1}
+                        ]
+                    }
+                }
+        self.game.handle_recruitment_consequences(consequences, accepted=True)
+        new_count = self.game.player.inventory.get_item_count("Health Potion")
+        self.assertEqual(new_count, initial_count + 1)
+
+        # test item consumption
+        consequences = {
+                "accept": {
+                    "items_consumed": [
+                        {"name": "Health Potion", "quantity": 1}
+                        ]
+                    }
+                }
+        initial_count = self.game.player.inventory.get_item_count("Health Potion")
+        self.game.handle_recruitment_consequences(consequences, accepted=True)
+        new_count = self.game.player.inventory.get_item_count("Health Potion")
+        self.assertEqual(new_count, initial_count - 1)
+
+    def test_full_recruitment_flow(self):
+        self.game.story.nodes["test_recruit"] = StoryNode("test_recruit", "recruitment")
+        self.game.story.nodes["test_recruit"].content = self.test_recruitment_content
+        self.game.story.nodes["village_square"] = StoryNode("village_square", "narrative")
+        self.game.story.nodes["forest_entrance"] = StoryNode("forest_entrance", "narrative")
+        self.game.story.current_node = self.game.story.nodes["test_recruit"]
+        # level player to meet requirements
+        self.game.player.level = 2
+
+        print(f"\nCurrent player level: {self.game.player.level}")
+        print(f"Required level: {self.test_recruitment_content['requirements']['min_level']}")
+        print(f"Current party size: {len(self.game.player_party.members)}")
+        print(f"Max party size: {self.test_recruitment_content['requirements']['max_party_size']}")
+        print(f"Health Potions: {self.game.player.inventory.get_item_count('Health Potion')}")
+
+        if self.game.player.inventory.get_item_count("Health Potion") == 0:
+            self.game.player.inventory.add_item("Health Potion", 1)
+            print("Added Health Potion to inventory")
+
+        current_node = self.game.story.current_node
+        print(f"Current node type: {current_node.node_type}")
+        print(f"Current node content: {current_node.content}")
+
+        with patch('builtins.input', return_value='y'):
+            result = self.game.handle_recruitment(self.test_recruitment_content)
+            print(f"Recruitment result: {result}")
+
+            self.assertTrue(result)
+            self.assertEqual(len(self.game.player_party.members), 2)
+            self.assertTrue(any(
+                isinstance(member, NPC) and member.npc_class == "Healer"
+                for member in self.game.player_party.members
+                ))
+
+        self.game = Game()
+        with patch('builtins.input', return_value='1'):
+            self.game.start_new_game()
+            self.game.player.level = 2
+            self.game.story.nodes["test_recruit"] = StoryNode("test_recruit", "recruitment")
+            self.game.story.nodes["village_square"] = StoryNode("village_square", "narrative")
+            self.game.story.nodes["forest_entrance"] = StoryNode("forest_entrance", "narrative")
+            self.game.story.current_node = self.game.story.nodes["test_recruit"]
+
+        with patch('builtins.input', return_value='n'):
+            result = self.game.handle_recruitment(self.test_recruitment_content)
+            self.assertFalse(result)
+
 class TestStory(unittest.TestCase):
     def setUp(self):
-        # Match the exact story content from story_content.py
+        self.game = Game()
+        with patch('builtins.input', return_value='1'):
+            self.game.start_new_game()
+
         self.test_story_content = {
             "start": {
                 "type": "narrative",
                 "content": {
-                    "text": "You stand at the entrance of the ancient forest...",
-                    "description": "A peaceful morning greets you..."
+                    "text": "Test start",
+                    "description": "Test description"
                 },
                 "choices": [
                     {
                         "id": "choice_solo",
-                        "text": "Take the narrow path through the dense forest",
+                        "text": "Go alone",
                         "next_node": "solo_path",
                         "requirements": {"party_size": {"max": 1}}
                     },
                     {
-                        "id": "choice_village",
-                        "text": "Visit the nearby village to seek companions",
-                        "next_node": "village_path",
+                        "id": "choice_recruit",
+                        "text": "Seek allies",
+                        "next_node": "village_healer",
                         "requirements": {"party_size": {"max": 3}}
                     }
                 ]
             },
-            "solo_path": {
-                "type": "combat",
+            "village_healer": {
+                "type": "recruitment",
                 "content": {
-                    "enemies": [("Goblin", 1)],
-                    "description": "A goblin jumps out from behind a tree!",
-                    "victory_node": "post_solo_combat",
-                    "defeat_node": "game over"
+                    "npc_class": "Healer",
+                    "name": "Elena",
+                    "description": "Test recruitment",
+                    "requirements": {
+                        "min_level": 2,
+                        "max_party_size": 3
+                    },
+                    "next_node_accept": "village_square",
+                    "next_node_reject": "forest_entrance"
                 }
             }
         }
-        
-        self.patcher = patch('story_content.get_story_content')
-        self.mock_get_content = self.patcher.start()
-        self.mock_get_content.return_value = self.test_story_content
-        
-        self.story = create_story()
+
+        self.game.story.nodes["village_square"] = StoryNode("village_square", "narrative")
+        self.game.story.nodes["forest_entrance"] = StoryNode("forest_entrance", "narrative")
+
+        with patch('story_content.get_story_content', return_value=self.test_story_content):
+            self.story = create_story()
+
         self.player_party = Party("player")
         self.player_party.add_member(Player("Warrior"))
+        
+    def test_recruitment_node_handling(self):
+        self.story.current_node = self.story.nodes["village_healer"]
+        result = handle_story_progression(self.story, self.player_party)
 
+        self.assertEqual(result["type"], "recruitment")
+        self.assertEqual(result["content"]["npc_class"], "Healer")
+        self.assertTrue("requirements" in result["content"])
+        
     def test_story_creation(self):
         self.assertIn("start", self.story.nodes)
         self.assertIn("solo_path", self.story.nodes)
