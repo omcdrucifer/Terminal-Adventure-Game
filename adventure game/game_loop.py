@@ -1,7 +1,7 @@
 # Game flow control
 import time
 import random
-from characters import Player, NPC, Boss, Enemy, Spell
+from characters import Player, NPC, Boss, Enemy, Spell, Item
 from party import Party
 from combat import Combat 
 from tree import create_story, handle_story_progression

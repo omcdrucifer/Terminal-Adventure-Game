@@ -9,19 +9,47 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(current_dir)
 sys.path.append(parent_dir)
 
-try:
-    from characters import Player, NPC, Enemy, Boss, Spell
-    from combat import Combat, handle_combat_encounter
-    from tree import StoryTree, create_story
-    from story_content import get_story_content
-    from game_loop import Game
-    from party import Party
-    from save_states import GameSave
-    from key_press import KeyboardInput
-except ImportError as e:
-    print(f"Error importing game modules: {e}")
-    print(f"Python path: {sys.path}")
-    sys.exit(1)
+from base_classes import GameEntity
+from characters import Player, NPC, Enemy, Boss, Spell, Item, Inventory, initialize_common_items
+from combat import Combat, handle_combat_encounter
+from tree import StoryTree, create_story
+from story_content import get_story_content
+from game_loop import Game
+from party import Party
+from save_states import GameSave
+from key_press import KeyboardInput
+
+class TestInventory(unittest.TestCase):
+    def setUp(self):
+        self.player = Player("Warrior")
+        self.inventory = self.player.inventory
+
+    def test_inventory_initialization(self):
+        self.assertIn("Health Potion", self.inventory.items)
+        self.assertEqual(self.inventory.get_item_count("Health Potion"), 3)
+
+    def test_inventory_size_limit(self):
+        self.inventory.items.clear()
+
+        for i in range(self.inventory.max_size):
+            item_name = f"Test Item {i}"
+            success, _ = self.inventory.add_item(item_name)
+            self.assertTrue(success)
+
+        success, message = self.inventory.add_item("Extra Item")
+        self.assertFalse(success)
+        self.assertIn("full", message.lower())
+
+    def test_item_usage(self):
+        initial_health = self.player.stats["Health"]
+        self.player.stats["Health"] = initial_health // 2
+        success, message = self.player.use_item("Health Potion")
+        self.assertTrue(success)
+        self.assertGreater(self.player.stats["Health"], initial_health // 2)
+
+        success, message = self.player.use_item("Nonexistent Item")
+        self.assertFalse(success)
+        self.assertIn("Invalid", message)
 
 class TestPlayer(unittest.TestCase):
     def setUp(self):
@@ -65,6 +93,27 @@ class TestPlayer(unittest.TestCase):
         initial_max_mana = mage.max_mana
         mage.gain_experience(100)
         self.assertGreater(mage.max_mana, initial_max_mana)
+        
+    def test_inventory_integration(self):
+        player = Player("Warrior")
+        mage = Player("Mage")
+        
+        self.assertIsNotNone(player.inventory)
+        self.assertIsNotNone(player.available_items)
+        self.assertEqual(player.inventory.get_item_count("Health Potion"), 3)
+
+        self.assertEqual(mage.inventory.get_item_count("Mana Potion"), 2)
+
+        success, _ = player.inventory.add_item("Strength Elixir")
+        self.assertTrue(success)
+
+        initial_strength = player.stats["Strength"]
+        success, _ = player.use_item("Strength Elixir")
+        self.assertTrue(success)
+        self.assertGreater(player.stats["Strength"], initial_strength)
+
+        player.update_buffs()
+        self.assertEqual(player.stats["Strength"], initial_strength)
 
 class TestCombat(unittest.TestCase):
     def setUp(self):
@@ -163,6 +212,42 @@ class TestCombat(unittest.TestCase):
             self.assertTrue(result.startswith("HIT_") or
                             result == "VICTORY" or
                             result == "DEFEAT")
+            
+    def test_item_usage_in_combat(self):
+        player = Player("Warrior")
+        enemy = Enemy("Goblin", 1)
+        player_party = Party("player")
+        enemy_party = Party("enemy")
+
+        player_party.add_member(player)
+        enemy_party.add_member(enemy)
+
+        combat = Combat(player_party, enemy_party)
+
+        initial_health = player.stats["Health"]
+        player.stats["Health"] = initial_health // 2
+
+        with patch('builtins.input', return_value='1'):
+            result = combat.handle_combat_action(player, "use_item", target_index=None, item_name="Health Potion")
+
+        self.assertTrue(result.startswith("ITEM_USED_"))
+        self.assertGreater(player.stats["Health"], initial_health // 2)
+        
+    def test_spell_casting(self):
+        mage = Player("Mage")
+        enemy = Enemy("Goblin", 1)
+
+        combat = Combat(self.player_party, self.enemy_party)
+
+        spells = combat.get_available_spells(mage)
+        self.assertTrue(len(spells) > 0)
+
+        spell_name = list(spells.keys())[0]
+        initial_mana = mage.current_mana
+        result = combat.cast_spell(mage, spell_name, enemy)
+
+        self.assertLess(mage.current_mana, initial_mana)
+        self.assertTrue(result.startswith("Spell hit") or result.startswith("DEFEAT"))
 
 class TestKeyboardInput(unittest.TestCase):
     def setUp(self):

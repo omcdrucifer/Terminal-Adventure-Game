@@ -1,5 +1,5 @@
 import random
-from characters import Player, NPC, Boss, Enemy, Spell
+from characters import Player, NPC, Boss, Enemy, Spell, Item, Inventory
 from party import Party
 
 class Combat:
@@ -70,16 +70,26 @@ class Combat:
             return self.spell_lists[combatant.player_class]
         return {}
 
-    def can_cast_spell(self, caster, spell):
-        return hasattr(caster, 'current_mana') and caster.current_mana >= spell.mana_cost
+    def can_cast_spell(self, caster, spell_name):
+        available_spells = self.get_available_spells(caster)
+        if spell_name not in available_spells:
+            return "Invalid Spell"
+
+        spell = available_spells[spell_name]
+        if not spell.can_cast(caster):
+            return False, "Not enough mana"
+
+        return True, "Can cast spell"
 
     def cast_spell(self, caster, spell_name, target):
         available_spells = self.get_available_spells(caster)
         if spell_name not in available_spells:
             return "Invalid Spell"
         spell = available_spells[spell_name]
-        if not self.can_cast_spell(caster, spell):
-            return "Not enough mana"
+        can_cast, message = self.can_cast_spell(caster, spell_name)
+        if not can_cast:
+            return message
+
         magic_bonus = caster.stats.get("Magic", 0) * spell.scaling_factor
         base_effect = random.randint(spell.base_damage - 5, spell.base_damage + 5)
         total_effect = int(base_effect + magic_bonus)
@@ -101,6 +111,7 @@ class Combat:
                 if isinstance(target, (Enemy, Boss)) and hasattr(caster, "player_class"):
                     self.handle_experience(caster, target)
                 return f"DEFEAT {self.get_combatant_type(target)}"
+
             return f"Spell hit {total_effect}"
 
     def handle_initiative(self):
@@ -166,7 +177,7 @@ class Combat:
                 return getattr(combatant, attr)
         return 'Unknown'
 
-    def handle_combat_action(self, combatant, action_type, target_index=None, spell_name=None):
+    def handle_combat_action(self, combatant, action_type, target_index=None, spell_name=None, item_name=None):
         if action_type == "attack":
             return self.attack(target_index)
         elif action_type == "flee":
@@ -177,13 +188,49 @@ class Combat:
         elif action_type == "cast_spell":
             target = self.enemy_party.members[target_index]
             return self.cast_spell(combatant, spell_name, target)
-        return "INVALID_ACTION"    
+        elif action_type == "use_item":
+            if not isinstance(combatant, Player):
+                return "INVALID_ACTION"    
+
+            item = combatant.available_items.get(item_name)
+            if not item:
+                return "INVALID_ITEM"
+
+            if item.effect_type in ["heal", "mana", "buff_strength"]:
+                print("\nChoose target:")
+                for i, member in enumerate(self.player_party.members):
+                    print(f"{i + 1}. {self.get_combatant_type(member)} (HP: {member.stats['Health']})")
+
+                try:
+                    target_choice = int(input(f"\nSelect target (1-{len(self.player_party.members)}): ")) - 1
+                    if 0 <= target_choice < len(self.player_party.members):
+                        target = self.player_party.members[target_choice]
+                    else:
+                        return "INVALID_TARGET"
+                except ValueError:
+                    return "INVALID_TARGET"
+            else:
+                if target_index is not None:
+                    target = self.enemy_party.members[target_index]
+                else:
+                    return "INVALID_TARGET"
+
+            success, message = combatant.use_item(item_name, target)
+            if success:
+                return f"ITEM_USED_{message}"
+            return f"ITEM_FAILED_{message}"
 
     def handle_combat_result(self, result):
         if isinstance(result, str):
             if result.startswith("HIT_"):
                 damage = result.split("_")[1]
                 print(f"Hit! Dealt {damage} damage!")
+            elif result.startswith("ITEM_USED_"):
+                message = result.split("ITEM_USED_")[1]
+                print(message)
+            elif result.startswith("ITEM_FAILED_"):
+                message = result.split("ITEM_FAILED_")[1]
+                print(f"Failed to use item: {message}")
         elif result == "MISS":
             print("Attack missed!")
         elif result.startswith("DEFEAT_"):
@@ -231,6 +278,57 @@ def handle_combat_encounter(self):
                             self.handle_combat_result(result)
                             self.handle_initiative()
                             return result if result in ["VICTORY", "DEFEAT"] else None
+                    elif action == 2:
+                        if not active_combatant.spells:
+                            print("No spells available!")
+                            continue
+
+                        print("\nAvailable Spells:")
+                        for spell_name, spell in active_combatant.spells.items():
+                            print(f" - {spell_name} (Mana Cost: {spell.mana_cost})")
+
+                        spell_name = input("\nEnter spell name (or 'back'): ")
+                        if spell_name.lower() == 'back':
+                            continue
+
+                        if spell_name not in active_combatant.spells:
+                            print("Invalid spell!")
+                            continue
+                        
+                        print("\nChoose target:")
+                        for i, status in enumerate(enemy_status):
+                            print(f"{i + 1}. {status}")
+                        target = int(input(f"\nSelect target (1-{len(enemy_status)}): ")) - 1
+
+                        if 0 <= target < len(enemy_status):
+                            result = self.handle_combat_action(active_combatant, "cast_spell", target, spell_name)
+                            self.handle_combat_result(result)
+                            self.handle_initiative()
+                            return result if result in ["VICTORY", "DEFEAT"] else None
+
+                    elif action == 3:
+                        if not active_combatant.inventory.items:
+                            print("No items in inventory!")
+                            continue
+
+                        print("\nAvailable Items:")
+                        for item_name, quantity in active_combatant.inventory.items.items():
+                            item = active_combatant.available_items[item_name]
+                            print(f"- {item_name} (x{quantity}): {item.description}")
+
+                        item_name = input("\nEnter item name (or 'back'): ")
+                        if item_name.lower() == 'back':
+                            continue
+
+                        if item_name not in active_combatant.inventory.items:
+                            print("\nInvalid item!")
+                            continue
+
+                        result = self.handle_combat_action(active_combatant, "use_item", None, None, item_name)
+                        self.handle_combat_result(result)
+                        self.handle_initiative()
+                        return result if result in ["VICTORY", "DEFEAT"] else None
+
                     elif action == 4:  # flee
                         flee_chance = random.randint(1, 100)
                         if flee_chance <= 50:
