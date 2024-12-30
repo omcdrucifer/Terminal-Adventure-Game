@@ -211,7 +211,7 @@ class Player(GameEntity):
                 del self.active_buffs[stat]
 
     def gain_experience(self, xp):
-        #       if self.level == self.max_level:
+#       if self.level == self.max_level:
 #           break    -- handles the edge case if I were to impose a level cap
         self.experience += xp
         if self.experience >= self.experience_to_next_level:
