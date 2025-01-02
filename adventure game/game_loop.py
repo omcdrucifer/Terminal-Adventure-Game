@@ -245,7 +245,7 @@ class Game:
     def start_boss_combat(self):
         enemy_party = Party("enemy")
         enemy = Boss("Dragon", self.player_level, self.player_party)
-        enemy_party.add_member(boss)
+        enemy_party.add_member(enemy)
         combat = Combat(self.player_party, enemy_party)
         result = self.handle_combat(combat)
 
