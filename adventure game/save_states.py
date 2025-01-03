@@ -4,7 +4,6 @@ import json
 from characters import Player
 import os
 from datetime import datetime
-from typing import Dict, Optional
 
 class GameSave:
     def __init__(self, save_directory="saves"):
@@ -13,7 +12,7 @@ class GameSave:
         if not os.path.exists(save_directory):
             os.makedirs(save_directory)
 
-    def save_game(self, player, current_location="town", slot=None, auto_save=False):
+    def save_game(self, player: Optional['Player'], current_location: str = "town", slot: Optional[int] = None, auto_save: bool = False) -> str:
         if player is None:
             raise ValueError("Cannot save game without a player")
         # save to a JSON
@@ -40,7 +39,7 @@ class GameSave:
         filepath = os.path.join(self.save_directory, filename)
         with open(filepath, 'w') as f:
             json.dump(save_data, f, indent=4)
-        return filepath   
+        return filepath  
         
     def load_game(self, filename):
         # load from JSON
@@ -81,8 +80,10 @@ class GameSave:
                 if player is None:
                     print("\nNo active game to save!")
                     continue
+                if current_location is None:
+                    current_location = "town"
                 filepath = self.save_game(player, current_location)
-                print("\nGame saved successfully to (filepath)")
+                print(f"\nGame saved successfully to {filepath}")
                 return None
             elif choice == "2":
                 saves = self.list_saves()
