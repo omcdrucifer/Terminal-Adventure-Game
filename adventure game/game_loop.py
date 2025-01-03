@@ -1,14 +1,22 @@
 # Game flow control
 import time
-import random
-from characters import Player, NPC, Boss, Enemy, Spell, Item 
+from typing import Optional, Dict, Any, Tuple 
+from characters import Player, NPC, Boss, Enemy
 from party import Party
 from combat import Combat 
-from tree import create_story, handle_story_progression
+from tree import StoryTree, create_story, handle_story_progression
 from save_states import GameSave
 from key_press import KeyboardInput
 
 class Game:
+    player: Optional[Player]
+    player_party: Optional[Party]
+    current_location: str
+    playing: bool
+    story: StoryTree
+    keyboard: KeyboardInput
+    game_save: GameSave
+
     def __init__(self):
         self.game_save = GameSave()
         self.player = None
@@ -75,8 +83,8 @@ class Game:
             print(f"\nError creating character: {e}")
             return False
     
-    def load_game(self):
-        save_data = self.game_save.handle_save_menu(None, None)
+    def load_game(self) -> bool:
+        save_data: Optional[Dict[str, Any]] = self.game_save.handle_save_menu(None, self.current_location)
         if save_data:
             # reconstruct player from save data
             self.player = Player(save_data["player"]["class"])
@@ -130,6 +138,12 @@ class Game:
                         print("Please enter a valid number.")
             elif result["type"] == "combat":
                 combat_result = self.handle_combat(result["combat"])
+                if combat_result == "VICTORY":
+                    self.story.current_node = self.story.nodes[result["combat"]["victory_node"]]
+                elif combat_result == "DEFEAT":
+                    self.story.current_node = self.story.nodes[result["combat"]["defeat_node"]]
+                elif combat_result == "FLED":
+                    self.current_location = "town"
             elif result["type"] == "recruitment":
                 self.handle_recruitment(result["content"])
 
@@ -139,6 +153,10 @@ class Game:
             print("\n" + "="*50)
             print("TOWN")
             print("="*50)
+            if self.player is None:
+                print("Error: No active player")
+                return
+
             print(f"Level {self.player.level} {self.player.player_class}")
             print(f"HP: {self.player.stats['Health']}")
             if self.player.player_class in ["Mage", "Healer"]:
@@ -165,6 +183,10 @@ class Game:
             print("\n" + "="*50)
             print("DUNGEON")
             print("="*50)
+            if self.player is None:
+                print("Error: No active player")
+                return
+
             print(f"Level {self.player.level} {self.player.player_class}")
             print(f"HP: {self.player.stats['Health']}")
             if self.player.player_class in ["Mage", "Healer"]:
@@ -212,6 +234,10 @@ class Game:
         print("\n" + "="*50)
         print("CHARACTER STATS")
         print("="*50)
+        if self.player is None:
+                print("Error: No active player")
+                return
+
         print(f"Class: {self.player.player_class}")
         print(f"Level: {self.player.level}")
         print(f"Experience: {self.player.experience}/{self.player.experience_to_next_level}")
@@ -223,15 +249,27 @@ class Game:
     def rest(self):
         print("\nResting...")
         time.sleep(1)
-        self.player.stats["Health"] = self.player.max_health
-        if hasattr(self.player, "current_mana"):
+        if self.player is None:
+            print("Error: No active player")
+            return
+
+        max_health = self.player.max_health
+        if max_health is not None:
+            self.player.stats["Health"] = max_health
+
+        if hasattr(self.player, "current_mana") and hasattr(self.player, "max_mana"):
             self.player.current_mana = self.player.max_mana
+
         print("HP and Mana restored!")
         time.sleep(1)
 
     def start_combat(self):
+        if self.player is None:
+            print("Error: No active player")
+            return
+        
         enemy_party = Party("enemy")
-        enemy = Enemy("Goblin", self.player_level)
+        enemy = Enemy("Goblin", self.player.level)
         enemy_party.add_member(enemy)
         combat = Combat(self.player_party, enemy_party)
         result = self.handle_combat(combat)
@@ -243,8 +281,12 @@ class Game:
             self.current_location = "town"
 
     def start_boss_combat(self):
+        if self.player is None:
+            print("Error: No active player")
+            return
+
         enemy_party = Party("enemy")
-        enemy = Boss("Dragon", self.player_level, self.player_party)
+        enemy = Boss("Dragon", self.player.level, self.player_party)
         enemy_party.add_member(enemy)
         combat = Combat(self.player_party, enemy_party)
         result = self.handle_combat(combat)
@@ -260,9 +302,12 @@ class Game:
         self.game_save.save_game(self.player, self.current_location, auto_save=True)
         return combat.handle_combat_encounter()
 
-    def check_recruitment_requirements(self, requirements):
+    def check_recruitment_requirements(self, requirements: Optional[Dict[str, Any]]) -> Tuple[bool, str]:
         if not requirements:
             return True, ""
+
+        if self.player is None or self.player_party is None:
+            return False, "No active player or party"
 
         if "min_level" in requirements:
             if self.player.level < requirements["min_level"]:
@@ -275,20 +320,23 @@ class Game:
         if "class_not_in_party" in requirements:
             for member in self.player_party.members:
                 if (hasattr(member, 'player_class') and
-                    member.player_class == requirements["class_not_in_party"] or \
-                            hasattr(member, 'npc_class') and
+                    member.player_class == requirements["class_not_in_party"] or
+                    hasattr(member, 'npc_class') and
                     member.npc_class == requirements["class_not_in_party"]):
                     return False, f"You already have a {requirements['class_not_in_party']} in your party"
 
         if "items_required" in requirements:
             for item_name in requirements["items_required"]:
                 if self.player.inventory.get_item_count(item_name) <= 0:
-                    return False, "You need a {item_name} to recruit this character"
+                    return False, f"You need a {item_name} to recruit this character"
 
         return True, ""
     
-    def handle_recruitment_consequences(self, consequences, accepted):
+    def handle_recruitment_consequences(self, consequences: Optional[Dict[str, Any]], accepted: bool) -> None:
         if not consequences:
+            return
+
+        if self.player is None or self.player_party is None:
             return
 
         consequence_type = "accept" if accepted else "reject"
@@ -321,9 +369,13 @@ class Game:
             change = result["reputation_change"]
             print(f"\nReputation {'increased' if change > 0 else 'decreased'}")
 
-    def handle_recruitment(self, content):
+    def handle_recruitment(self, content: Optional[Dict[str, Any]]) -> bool:
         if not content or 'npc_class' not in content:
             print("Error: Invalid recruitment content")
+            return False
+
+        if self.player is None or self.player_party is None:
+            print("Error: No active player or party")
             return False
 
         print(f"\n{content.get('description', 'You encounter a potential ally.')}")

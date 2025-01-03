@@ -1,7 +1,10 @@
 # save system
+from typing import Optional, Dict, Any
 import json
+from characters import Player
 import os
 from datetime import datetime
+from typing import Dict, Optional
 
 class GameSave:
     def __init__(self, save_directory="saves"):
@@ -65,7 +68,7 @@ class GameSave:
                     })
         return saves
 
-    def handle_save_menu(self, player, current_location):
+    def handle_save_menu(self, player: Optional[Player], current_location: Optional[str]) -> Optional[Dict[str, Any]]:
         while True:
             print("\nSave Game Menu:")
             print("1. Create New Save")
