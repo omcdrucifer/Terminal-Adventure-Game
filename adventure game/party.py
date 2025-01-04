@@ -1,6 +1,6 @@
 # manages parties for both players and enemies
 from base_classes import GameEntity
-from characters import NPC, Enemy, Boss, Player
+from characters import NPC, Enemy, Boss 
 
 class Party:
     def __init__(self, party_type="player"):

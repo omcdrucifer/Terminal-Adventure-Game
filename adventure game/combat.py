@@ -1,6 +1,5 @@
 import random
-from characters import Player, NPC, Boss, Enemy, Spell, Item, Inventory
-from party import Party
+from characters import Player, NPC, Boss, Enemy, Spell
 
 class Combat:
     def __init__(self, player_party, enemy_party):
@@ -191,6 +190,9 @@ class Combat:
         elif action_type == "use_item":
             if not isinstance(combatant, Player):
                 return "INVALID_ACTION"    
+
+            if item_name is None:
+                return "INVALID_ITEM"
 
             item = combatant.available_items.get(item_name)
             if not item:

@@ -1,8 +1,8 @@
 # Tree Node for the story system
-from characters import Player, NPC
-from combat import Combat
+from characters import Enemy, Boss
+from combat import Combat, handle_combat_encounter
 from party import Party
-from story_content import get_story_content  
+from story_content import get_story_content
 
 class StoryNode:
     def __init__(self, node_id, node_type):
@@ -48,13 +48,9 @@ class StoryTree:
                 party_size = len(party.members)
                 min_size = req_value.get("min", 0)
                 max_size = req_value.get("max", float('inf'))
-                # Strict check for party size requirements
                 if not (min_size <= party_size <= max_size):
                     return False
         return True
-
-# I decided in an effort to keep things contained and easy to maintain, I will move the story nodes that construct the
-# story to another file and rewrote the story function to handle that
 
 def create_story():
     story = StoryTree()
@@ -62,14 +58,12 @@ def create_story():
     
     print("\nDebug - Story data nodes:", list(story_data.keys()))
 
-    # First pass: Create all nodes
     for node_id, node_data in story_data.items():
         node = StoryNode(node_id, node_data["type"])
         node.content = node_data.get("content", {})
         story.add_node(node)
         print(f"Debug - Created node: {node_id}")
 
-    # Second pass: Add choices
     for node_id, node_data in story_data.items():
         if "choices" in node_data:
             node = story.nodes[node_id]
@@ -86,17 +80,20 @@ def create_story():
     story.start_story("start")
     return story
 
-def handle_story_progression(story, party, choice=None):
+def handle_story_progression(story, party):
     if not story.current_node:
         return None
+        
     current_node = story.current_node
+    
     if current_node.node_type == "narrative":
         available_choices = story.get_available_choices(party)
         return {
             "type": "narrative",
             "content": current_node.content,
             "choices": available_choices
-            }
+        }
+        
     elif current_node.node_type == "combat":
         enemy_party = Party("enemy")
         for enemy_type, count in current_node.content["enemies"]:
@@ -105,13 +102,21 @@ def handle_story_progression(story, party, choice=None):
                     enemy_party.add_member(Boss(enemy_type, party.get_average_level(), party))
                 else:
                     enemy_party.add_member(Enemy(enemy_type, party.get_average_level()))
-        combat_result = handle_combat_encounter(party, enemy_party)
-        next_node = current_node.content["victory_node"] if combat_result else current_node.content["defeat_node"]
+                    
+        combat = Combat(party, enemy_party)
+        combat_result = handle_combat_encounter(combat)  # Use the function directly
+        
+        next_node = (current_node.content["victory_node"] 
+                    if combat_result == "VICTORY" 
+                    else current_node.content["defeat_node"])
+        
         story.current_node = story.nodes[next_node]
-        return {"type": "combat_result", "victory": combat_results}
+        return {"type": "combat_result", "victory": combat_result}
+        
     elif current_node.node_type == "recruitment":
         return {
             "type": "recruitment",
             "content": current_node.content
-            }
+        }
+        
     return None

@@ -174,13 +174,19 @@ class Player(GameEntity):
             target = self
 
         if item.effect_type == "heal":
-            target.stats["Health"] = min(
-                    target.stats["Health"] + item.effect_value,
-                    target.max_health
+            if hasattr(target, 'max_health') and target.max_health is not None:
+                max_hp = target.max_health
+                if isinstance(max_hp, (int, float)):
+                    target.stats["Health"] = min(
+                        target.stats["Health"] + item.effect_value,
+                        int(max_hp)
                     )
+                else:
+                    target.stats["Health"] += item.effect_value
+            else:
+                target.stats["Health"] += item.effect_value
             success = True
             message = f"{target.player_class} {item.use_text.format(value=item.effect_value)}"
-
         elif item.effect_type == "mana" and hasattr(target, 'current_mana'):
             target.current_mana = min(
                     target.current_mana + item.effect_value,
@@ -202,6 +208,7 @@ class Player(GameEntity):
             self.inventory.remove_item(item_name)
 
         return success, message
+
 
     def update_buffs(self):
         for stat, buffs in list(self.active_buffs.items()):
@@ -303,6 +310,9 @@ class Enemy(GameEntity):
             self.stats["Health"] = 65 + 15 * (self.level - 1)
             self.stats["Defense"] = 8 + 2 * (self.level - 1)
             self.experience_value = 25 + 5 * (self.level - 1)
+    @property
+    def max_health(self):
+        return self.stats["Health"]
 
 class Boss(GameEntity):
     def __init__(self, boss_class, player_level, player_party):
@@ -332,4 +342,3 @@ class Boss(GameEntity):
             self.stats["Health"] = 100 + 20 * (self.level - 1)
             self.stats["Defense"] = 15 + 4 * (self.level - 1)
             self.experience_value = 55 + 10 * (self.level - 1)
-
