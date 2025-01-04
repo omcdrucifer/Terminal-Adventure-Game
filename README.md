@@ -33,10 +33,11 @@ Some key features are:
     members of a party. This allows for recruiting in story and removing
     party members either if deceased or having abandoned the party. 
 
-A lot of what is in place is boiler plate and can/should be built out.
-For example there are only three spells available for each magic class.
-I want/should build out a spell system that allows learning more spells
-as the character levels. I may consider allowing more classes in the 
-future but for now I think I should leave it where it is. I have logic
-in place that is currently not being implemented to allow me to impose
-a level cap if I feel that it is necessary to do so. 
+All code is now free of LSP errors and thus type safe. I plan to rewrite my unit
+tests then I will proceed with writing a story that I can work into the tree and 
+replace the existing filler content. 
+
+I want to also look into expanding the magic tables to allow for more spells as
+magic users level up. I want to work in some added benefit for Warrior as well as
+it is the only player class that does not have a unique perk. It's only balanced
+heavier in armor and health at this point. 
