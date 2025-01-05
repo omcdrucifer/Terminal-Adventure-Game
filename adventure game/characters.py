@@ -1,3 +1,4 @@
+from typing import Dict, Optional
 from base_classes import GameEntity
 
 class Spell:
@@ -237,9 +238,9 @@ class NPC(GameEntity):
         self.npc_class = npc_class
         self.level = player_level
 #       self.max_level = N  -- if I wanted to impose a level cap
-        self.spells = {}
-        self.current_mana = 0
-        self.max_mana = 0
+        self.spells: Optional[Dict[str, Spell]] = None
+        self.current_mana: int = 0
+        self.max_mana: int = 0
         self.update_stats()
         self.initialize_class_features()
 
