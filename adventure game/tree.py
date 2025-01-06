@@ -81,6 +81,13 @@ def create_story():
                 node.choices.append(choice)
                 print(f"Debug - Added choice to {node_id}: {choice.text} with requirements {choice.requirements}")
 
+    # Add the 'game_over' node if it doesn't exist
+    if "game_over" not in story.nodes:
+        game_over_node = StoryNode("game_over", "narrative")
+        game_over_node.content = {"text": "Game Over. You have been defeated.", "description": ""}
+        story.add_node(game_over_node)
+        print("Debug - Created node: game_over")
+
     story.start_story("start")
     return story
 

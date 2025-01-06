@@ -564,6 +564,7 @@ class TestHandleCombatEncounter:
         monkeypatch.setattr('builtins.input', lambda _: next(inputs))
 
         result = self.combat.handle_combat_encounter()
+        print(f"Combat result: {result}")
         assert result in ["VICTORY", "DEFEAT", "FLED"]
 
     def test_mage_combat_scenario(self, monkeypatch):
@@ -1207,7 +1208,7 @@ class TestGame:
         monkeypatch.setattr('builtins.input', mock_input)
 
         self.game.main_game_loop()
-
+        print(f"Current location: {self.game.current_location}")
         assert self.game.current_location == "town"
 
     def test_party_level_synchronization(self):

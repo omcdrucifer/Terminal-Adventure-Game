@@ -252,15 +252,21 @@ class Combat:
 
     def handle_combat_encounter(self):
         while True:
+            print("Checking victory/defeat conditions...")
             if not self.enemy_party.is_party_alive():
+                print("Enemy party defeated. Victory!")
                 return "VICTORY"
             if not self.player_party.is_party_alive():
+                print("Player party defeated. Defeat!")
                 return "DEFEAT"
 
             party_status, enemy_status = self.get_combat_status()
             print("\nCurrent Combat Status:")
             print("Player Party:")
             for status in party_status:
+                print(f"- {status}")
+            print("Enemy Party:")
+            for status in enemy_status:
                 print(f"- {status}")
 
             if self.is_player_turn:
@@ -282,7 +288,8 @@ class Combat:
                             if 0 <= target < len(enemy_status):
                                 result = self.attack(target)
                                 self.handle_combat_result(result)
-                                return result
+                                if result in ["VICTORY", "DEFEAT"]:
+                                    return result
                             self.handle_initiative()
                         elif action == 2:
                             if not active_combatant.spells:
@@ -332,6 +339,7 @@ class Combat:
                         elif action == 4:  # flee
                             flee_chance = random.randint(1, 100)
                             if flee_chance <= 50:
+                                print("Successfully fled!")
                                 return "FLED"
                             print("Failed to flee!")
                             self.handle_initiative()
