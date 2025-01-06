@@ -386,23 +386,12 @@ class TestCombat:
 
         self.combat = Combat(self.player_party, self.enemy_party)
 
-    def test_combat_initialization(self, monkeypatch):
-        self.game.player = Player("Warrior")
-        self.game.player_party = Party("player")
-        self.game.player_party.add_member(self.game.player)
-
-        inputs = iter(['1', '1'])
-        monkeypatch.setattr('builtins.input', lambda _: next(inputs))
-
-        def mock_handle_combat_encounter():
-            return "VICTORY"
-        
-        # Mock the handle_combat_encounter function
-        monkeypatch.setattr('combat.handle_combat_encounter', mock_handle_combat_encounter)
-
-        self.game.start_combat()
-        assert isinstance(self.game.player, Player)
-        assert self.game.current_location in ["town", "dungeon"]
+    def test_combat_initialization(self):
+        assert isinstance(self.combat.player_party, Party)
+        assert isinstance(self.combat.enemy_party, Party)
+        assert len(self.combat.initiative_order) > 0
+        assert self.combat.current_turn_index == 0
+        assert isinstance(self.combat.is_player_turn, bool)
 
     def test_invalid_combat_initialization(self):
         invalid_party = Party("player")
@@ -498,24 +487,7 @@ class TestCombat:
         assert result.startswith("ITEM_USED") or result.startswith("ITEM_FAILED")
         if result.startswith("ITEM_USED"):
             assert self.player.stats["Health"] > initial_health
-
-    def test_multi_round_combat(self, monkeypatch):
-        self.player.stats["Health"] = 200
-        self.enemy.stats["Health"] = 200
-
-        inputs = iter(['1', '1'] * 10)
-        monkeypatch.setattr('builtins.input', lambda _: next(inputs))
-
-        # Mock the attack method to return a 'HIT_10' result
-        def mock_attack():
-            return "HIT_10"
-
-        monkeypatch.setattr(Combat, 'attack', mock_attack)
-
-        # Changed from handle_combat_encounter(self.combat) to:
-        result = self.combat.handle_combat_encounter()
-        assert result in ["VICTORY", "DEFEAT", "FLED", "HIT_10"]
-
+    
     def test_experience_distribution(self):
         initial_exp = self.player.experience
         self.enemy.stats["Health"] = 0
@@ -590,13 +562,8 @@ class TestHandleCombatEncounter:
         inputs = iter(['1', '1'] * 10)
         monkeypatch.setattr('builtins.input', lambda _: next(inputs))
 
-        def mock_attack(*_):  # Added self parameter
-            return "HIT_10"
-
-        monkeypatch.setattr(Combat, 'attack', mock_attack)
-
         result = self.combat.handle_combat_encounter()
-        assert result in ["VICTORY", "DEFEAT", "FLED", "HIT_10"]  # Added assertion
+        assert result in ["VICTORY", "DEFEAT", "FLED"]  # Added assertion
 
     def test_mage_combat_scenario(self, monkeypatch):
         mage = Player("Mage")
@@ -1168,7 +1135,7 @@ class TestGame:
         self.game.rest()
         assert self.game.player.stats["Health"] == initial_max_health
 
-    def test_combat_initialization(self, monkeypatch):
+    def test_game_combat_initialization(self, monkeypatch):
         self.game.player = Player("Warrior")
         self.game.player_party = Party("player")
         self.game.player_party.add_member(self.game.player)
@@ -1176,13 +1143,9 @@ class TestGame:
         inputs = iter(['1', '1'])
         monkeypatch.setattr('builtins.input', lambda _: next(inputs))
 
-        def mock_combat_action(*args, **kwargs):
-            # Access the args and kwargs to avoid the warning
-            _ = args, kwargs
+        def mock_combat(_):
             return "VICTORY"
-        
-        # Mock the correct method that handles combat action
-        monkeypatch.setattr(Combat, 'handle_combat_action', mock_combat_action)
+        monkeypatch.setattr(Combat, 'handle_combat_encounter', mock_combat)
 
         self.game.start_combat()
         assert isinstance(self.game.player, Player)
