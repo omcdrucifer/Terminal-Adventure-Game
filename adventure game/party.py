@@ -63,3 +63,9 @@ class Party:
                     )
             status.append(f"{member_type} (#{i}): Health = {member.stats['Health']}")
         return status
+
+    def get_average_level(self):
+        if not self.members:
+            return 0
+        total_level = sum(member.level for member in self.members)
+        return total_level / len(self.members)

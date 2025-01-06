@@ -115,7 +115,8 @@ class Combat:
 
     def handle_initiative(self):
         self.current_turn_index = (self.current_turn_index + 1) % len(self.initiative_order)
-        self.is_player_turn = isinstance(self.get_active_combatant(), (Player, NPC))
+        active_combatant = self.get_active_combatant()
+        self.is_player_turn = isinstance(active_combatant, (Player, NPC))
 
     def attack(self, target_index=None):
         if not self.player_party.is_party_alive():
@@ -245,12 +246,11 @@ class Combat:
         elif result == "DEFEAT":
             print("Defeat! Your party has fallen!")
 
-    def handle_combat_encounter(self):  
+    def handle_combat_encounter(self):
         while True:
-
-            if not self.enemy_party.is_party_alive():  
+            if not self.enemy_party.is_party_alive():
                 return "VICTORY"
-            if not self.player_party.is_party_alive():  
+            if not self.player_party.is_party_alive():
                 return "DEFEAT"
 
             party_status, enemy_status = self.get_combat_status()  

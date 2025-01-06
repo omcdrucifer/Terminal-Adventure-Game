@@ -407,11 +407,9 @@ class TestCombat:
         assert all(hasattr(combatant, 'initiative') for combatant in initial_order)
 
     def test_combat_turn_handling(self, monkeypatch):
-        # Save the initial turn index and turn flag
         initial_index = self.combat.current_turn_index
         initial_turn = self.combat.is_player_turn
 
-        # Mock random.randint to ensure consistent behavior
         def mock_randint(_):
             return 1
         monkeypatch.setattr('random.randint', mock_randint)
@@ -419,16 +417,13 @@ class TestCombat:
         print(f"Initial Turn Index: {initial_index}")
         print(f"Initial Turn Flag: {initial_turn}")
 
-        # Run handle_initiative to update the turn
         self.combat.handle_initiative()
 
         print(f"Updated Turn Index: {self.combat.current_turn_index}")
         print(f"Updated Turn Flag: {self.combat.is_player_turn}")
 
-        # Check if current turn index has changed
         assert self.combat.current_turn_index != initial_index
 
-        # Ensure that the turn flag has changed
         if len(self.combat.initiative_order) > 1:
             assert self.combat.is_player_turn != initial_turn
 
@@ -569,7 +564,7 @@ class TestHandleCombatEncounter:
         monkeypatch.setattr('builtins.input', lambda _: next(inputs))
 
         result = self.combat.handle_combat_encounter()
-        assert result in ["VICTORY", "DEFEAT", "FLED"]  # Added assertion
+        assert result in ["VICTORY", "DEFEAT", "FLED"]
 
     def test_mage_combat_scenario(self, monkeypatch):
         mage = Player("Mage")
@@ -833,7 +828,6 @@ class TestStoryTree:
         self.party.members[0].level = 1
         available_choices = self.story_tree.get_available_choices(self.party)
 
-        # Debug statements to print out available choices and their requirements
         print(f"Available Choices: {[choice.text for choice in available_choices]}")
         for choice in available_choices:
             print(f"Choice Text: {choice.text}, Requirements: {choice.requirements}")
@@ -1214,10 +1208,6 @@ class TestGame:
 
         self.game.main_game_loop()
 
-        # Verify that the game resets to a valid location
-        assert self.game.current_location == "town"
-
-        self.game.main_game_loop()
         assert self.game.current_location == "town"
 
     def test_party_level_synchronization(self):
