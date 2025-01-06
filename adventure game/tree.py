@@ -45,6 +45,9 @@ class StoryTree:
         if not requirements:
             return True
         for req_type, req_value in requirements.items():
+            if req_type == "min_level":
+                if party.members[0].level < req_value:
+                    return False
             if req_type == "party_size":
                 party_size = len(party.members)
                 min_size = req_value.get("min", 0)
@@ -84,9 +87,9 @@ def create_story():
 def handle_story_progression(story, party):
     if not story.current_node:
         return None
-        
+
     current_node = story.current_node
-    
+
     if current_node.node_type == "narrative":
         available_choices = story.get_available_choices(party)
         return {
@@ -94,7 +97,7 @@ def handle_story_progression(story, party):
             "content": current_node.content,
             "choices": available_choices
         }
-        
+
     elif current_node.node_type == "combat":
         enemy_party = Party("enemy")
         for enemy_type, count in current_node.content["enemies"]:
@@ -103,21 +106,24 @@ def handle_story_progression(story, party):
                     enemy_party.add_member(Boss(enemy_type, party.get_average_level(), party))
                 else:
                     enemy_party.add_member(Enemy(enemy_type, party.get_average_level()))
-                    
+
         combat = Combat(party, enemy_party)
-        combat_result = combat.handle_combat_encounter()  # Use the function directly
-        
-        next_node = (current_node.content["victory_node"] 
-                    if combat_result == "VICTORY" 
+        combat_result = combat.handle_combat_encounter()
+
+        next_node = (current_node.content["victory_node"]
+                    if combat_result == "VICTORY"
                     else current_node.content["defeat_node"])
-        
+
+        if next_node not in story.nodes:
+            next_node = "game_over"
+
         story.current_node = story.nodes[next_node]
         return {"type": "combat_result", "victory": combat_result}
-        
+
     elif current_node.node_type == "recruitment":
         return {
             "type": "recruitment",
             "content": current_node.content
         }
-        
+
     return None
