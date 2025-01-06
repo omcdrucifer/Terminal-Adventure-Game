@@ -416,8 +416,14 @@ class TestCombat:
             return 1
         monkeypatch.setattr('random.randint', mock_randint)
 
+        print(f"Initial Turn Index: {initial_index}")
+        print(f"Initial Turn Flag: {initial_turn}")
+
         # Run handle_initiative to update the turn
         self.combat.handle_initiative()
+
+        print(f"Updated Turn Index: {self.combat.current_turn_index}")
+        print(f"Updated Turn Flag: {self.combat.is_player_turn}")
 
         # Check if current turn index has changed
         assert self.combat.current_turn_index != initial_index
@@ -815,9 +821,6 @@ class TestStoryTree:
 
     def test_available_choices(self):
         self.start_node.choices = []
-
-        # Create proper StoryChoice objects
-        from tree import StoryChoice  # Make sure to import StoryChoice
         
         self.start_node.choices.append(
             StoryChoice("choice_1", "Go to town", "town_node")
