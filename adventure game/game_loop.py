@@ -1,7 +1,8 @@
 # Game flow control
 import time
-from typing import Optional, Dict, Any, Tuple 
+from typing import Any, Dict, Optional, Tuple, cast
 from characters import Player, NPC, Boss, Enemy
+from story_types import CombatResult, NarrativeResult, RecruitmentResult
 from party import Party
 from combat import Combat 
 from tree import StoryTree, create_story, handle_story_progression
@@ -118,34 +119,40 @@ class Game:
         result = handle_story_progression(self.story, self.player_party)
         if result:
             if result["type"] == "narrative":
+                # Type cast the result
+                narrative_result = cast(NarrativeResult, result)
                 # display story text
                 print("\n" + "="*50)
-                print(result["content"]["text"])
-                print(result["content"]["description"])
+                print(narrative_result["content"]["text"])
+                print(narrative_result["content"]["description"])
 
                 print("\nChoices:")
-                for i, choice in enumerate(result["choices"], 1):
+                for i, choice in enumerate(narrative_result["choices"], 1):
                     print(f"{i}. {choice.text}")
                 # get player choice
                 while True:
                     try:
                         choice_num = int(input("\nEnter your choice: ")) - 1
-                        if 0 <= choice_num < len(result["choices"]):
-                            chosen = result["choices"][choice_num]
+                        if 0 <= choice_num < len(narrative_result["choices"]):
+                            chosen = narrative_result["choices"][choice_num]
                             self.story.current_node = self.story.nodes[chosen.next_node_id]
                             break
                     except ValueError:
                         print("Please enter a valid number.")
             elif result["type"] == "combat":
-                combat_result = self.handle_combat(result["combat"])
-                if combat_result == "VICTORY":
-                    self.story.current_node = self.story.nodes[result["combat"]["victory_node"]]
-                elif combat_result == "DEFEAT":
-                    self.story.current_node = self.story.nodes[result["combat"]["defeat_node"]]
-                elif combat_result == "FLED":
+                # Type cast the result
+                combat_result = cast(CombatResult, result)
+                result = self.handle_combat(combat_result["combat"])
+                if result == "VICTORY":
+                    self.story.current_node = self.story.nodes[combat_result["combat"]["victory_node"]]
+                elif result == "DEFEAT":
+                    self.story.current_node = self.story.nodes[combat_result["combat"]["defeat_node"]]
+                elif result == "FLED":
                     self.current_location = "town"
             elif result["type"] == "recruitment":
-                self.handle_recruitment(result["content"])
+                # Type cast the result
+                recruitment_result = cast(RecruitmentResult, result)
+                self.handle_recruitment(recruitment_result["content"])
 
     # i still need to write an actual story, these menus are placeholder concepts only
     def town_menu(self):

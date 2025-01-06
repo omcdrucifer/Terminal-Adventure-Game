@@ -1,6 +1,7 @@
 # Tree Node for the story system
+from typing import Dict, Any, Optional
 from characters import Enemy, Boss
-from combat import Combat, handle_combat_encounter
+from combat import Combat
 from party import Party
 from story_content import get_story_content
 
@@ -14,11 +15,11 @@ class StoryNode:
         self.consequences = {}
 
 class StoryChoice:
-    def __init__(self, choice_id, text, next_node_id, requirements=None):
-        self.choice_id = choice_id
-        self.text = text
-        self.next_node_id = next_node_id
-        self.requirements = requirements or {}
+    def __init__(self, choice_id: str, text: str, next_node_id: str, requirements: Optional[Dict[str, Any]] = None):
+        self.choice_id: str = choice_id
+        self.text: str = text
+        self.next_node_id: str = next_node_id
+        self.requirements: Dict[str, Any] = requirements or {}
 
 class StoryTree:
     def __init__(self):
@@ -104,7 +105,7 @@ def handle_story_progression(story, party):
                     enemy_party.add_member(Enemy(enemy_type, party.get_average_level()))
                     
         combat = Combat(party, enemy_party)
-        combat_result = handle_combat_encounter(combat)  # Use the function directly
+        combat_result = combat.handle_combat_encounter()  # Use the function directly
         
         next_node = (current_node.content["victory_node"] 
                     if combat_result == "VICTORY" 

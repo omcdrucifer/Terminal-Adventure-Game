@@ -9,3 +9,6 @@ class GameEntity:
                 "Agility": 0
                 }
         self.level = 1
+
+    def update_stats(self):
+        pass

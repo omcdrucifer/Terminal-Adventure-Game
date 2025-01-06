@@ -3,11 +3,14 @@ from base_classes import GameEntity
 from characters import NPC, Enemy, Boss 
 
 class Party:
-    def __init__(self, party_type="player"):
+    def __init__(self, party_type="player", max_size=4):
         self.members = []
         self.party_type = party_type
+        self.max_size = max_size
 
     def add_member(self, member):
+        if len(self.members) >= self.max_size:
+            raise ValueError("Party is full")
         if not isinstance(member, GameEntity):
             raise ValueError("Can only add game entities to parties")
         if self.party_type == "player":

@@ -1,4 +1,3 @@
-from typing import Dict, Optional
 from base_classes import GameEntity
 
 class Spell:
@@ -97,6 +96,7 @@ class Inventory:
 
 class Player(GameEntity):
     VALID_CLASSES = ["Warrior", "Mage", "Archer"]
+
     def __init__(self, chosen_class):
         if chosen_class not in self.VALID_CLASSES:
             raise ValueError(f"Invalid class. Must be one of: {', '.join(self.VALID_CLASSES)}")
@@ -104,8 +104,7 @@ class Player(GameEntity):
         super().__init__()
         self.player_class = chosen_class
         self.experience = 0
-        self.experience_to_next_level = 100   
-#       self.max_level = N  -- if I wanted to impose a level cap
+        self.experience_to_next_level = 100
         self.spells = {}
         self.current_mana = 0
         self.max_mana = 0
@@ -127,12 +126,12 @@ class Player(GameEntity):
             return 80 + 15 * (self.level - 1)
 
     def initialize_class_features(self):
+        if self.player_class == "Mage":
+            self.spells = initialize_mage_spells()
+        elif self.player_class == "Healer":
+            self.spells = initialize_healer_spells()
+        
         if self.player_class in ["Mage", "Healer"]:
-            if self.player_class == "Mage":
-                self.spells = initialize_mage_spells()
-            else:
-                self.spells = initialize_healer_spells()
-
             self.max_mana = self.stats["Magic"] * 5 + (self.level * 10)
             self.current_mana = self.max_mana
 
@@ -154,7 +153,7 @@ class Player(GameEntity):
 
         if self.player_class in ["Mage", "Healer"]:
             old_max_mana = self.max_mana
-            self.max_mana = self.stats["Magic"] * 5 + (self.max_mana * 10)
+            self.max_mana = self.stats["Magic"] * 5 + (self.level * 10)
             if old_max_mana > 0:
                 self.current_mana = int((self.current_mana / old_max_mana) * self.max_mana)
             else:
@@ -210,7 +209,6 @@ class Player(GameEntity):
 
         return success, message
 
-
     def update_buffs(self):
         for stat, buffs in list(self.active_buffs.items()):
             if buffs:
@@ -219,8 +217,6 @@ class Player(GameEntity):
                 del self.active_buffs[stat]
 
     def gain_experience(self, xp):
-#       if self.level == self.max_level:
-#           break    -- handles the edge case if I were to impose a level cap
         self.experience += xp
         if self.experience >= self.experience_to_next_level:
             self.level_up()
@@ -233,28 +229,30 @@ class Player(GameEntity):
         print(f"{self.player_class} leveled up to {self.level}!")
 # once I start piecing everything together, I'd like this to print the player name rather than class
 class NPC(GameEntity):
-    def __init__(self, npc_class, player_level):
+    def __init__(self, npc_class: str, player_level: int):
         super().__init__()
         self.npc_class = npc_class
         self.level = player_level
-#       self.max_level = N  -- if I wanted to impose a level cap
-        self.spells: Optional[Dict[str, Spell]] = None
-        self.current_mana: int = 0
-        self.max_mana: int = 0
+
+        if self.npc_class == "Healer":
+            self.current_mana = 0
+            self.max_mana = self.stats["Magic"] * 5 + (self.level * 10)
+            self.spells = initialize_healer_spells()
+        else:
+            self.spells = None
+            self.current_mana = 0
+            self.max_mana = 0
+
         self.update_stats()
         self.initialize_class_features()
 
     def initialize_class_features(self):
-        if self.npc_class in ["Mage", "Healer"]:
-            if self.npc_class == "Mage":
-                self.spells = initialize_mage_spells()
-            else:
-                self.spells = initialize_healer_spells()
-
+        if self.npc_class == "Healer":
             self.max_mana = self.stats["Magic"] * 5 + (self.level * 10)
             self.current_mana = self.max_mana
 
     def update_stats(self):
+        super().update_stats()
         if self.npc_class == "Fighter":
             self.stats["Strength"] = 20 + 5 * (self.level - 1)
             self.stats["Health"] = 100 + 20 * (self.level - 1)
@@ -270,9 +268,9 @@ class NPC(GameEntity):
             self.stats["Defense"] = 10 + 2 * (self.level - 1)
             self.stats["Agility"] = 25 + 5 * (self.level - 1)
 
-        if self.npc_class in ["Mage", "Healer"]:
+        if self.npc_class == "Healer":
             old_max_mana = self.max_mana
-            self.max_mana = self.stats["Magic"] * 5 + (self.max_mana * 10)
+            self.max_mana = self.stats["Magic"] * 5 + (self.level * 10)
             if old_max_mana > 0:
                 self.current_mana = int((self.current_mana / old_max_mana) * self.max_mana)
             else:
