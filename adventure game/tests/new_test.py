@@ -821,7 +821,7 @@ class TestStoryTree:
 
     def test_available_choices(self):
         self.start_node.choices = []
-        
+
         self.start_node.choices.append(
             StoryChoice("choice_1", "Go to town", "town_node")
         )
@@ -832,6 +832,11 @@ class TestStoryTree:
         self.story_tree.start_story("start")
         self.party.members[0].level = 1
         available_choices = self.story_tree.get_available_choices(self.party)
+
+        # Debug statements to print out available choices and their requirements
+        print(f"Available Choices: {[choice.text for choice in available_choices]}")
+        for choice in available_choices:
+            print(f"Choice Text: {choice.text}, Requirements: {choice.requirements}")
 
         if self.party.members[0].level < 5:
             assert len(available_choices) == 1
@@ -1202,10 +1207,15 @@ class TestGame:
         self.game.player_party.add_member(self.game.player)
         self.game.current_location = "Invalid_location"
 
-        def mock_input():
+        def mock_input(prompt):
             return '1'
-        
+
         monkeypatch.setattr('builtins.input', mock_input)
+
+        self.game.main_game_loop()
+
+        # Verify that the game resets to a valid location
+        assert self.game.current_location == "town"
 
         self.game.main_game_loop()
         assert self.game.current_location == "town"
