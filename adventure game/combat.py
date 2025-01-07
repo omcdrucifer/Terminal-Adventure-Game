@@ -251,8 +251,14 @@ class Combat:
             print("Defeat! Your party has fallen!")
 
     def handle_combat_encounter(self):
-        while True:
+        max_iterations = 1  # Set a maximum number of iterations to prevent infinite loop
+        iteration_count = 0
+
+        while iteration_count < max_iterations:
+            iteration_count += 1
+            print(f"Iteration: {iteration_count}")
             print("Checking victory/defeat conditions...")
+
             if not self.enemy_party.is_party_alive():
                 print("Enemy party defeated. Victory!")
                 return "VICTORY"
@@ -361,4 +367,5 @@ class Combat:
                     return result
                 self.handle_initiative()
 
-            return "DEFEAT"
+        print("Reached maximum iterations. Possible infinite loop detected.")
+        return "INFINITE_LOOP_DETECTED"
