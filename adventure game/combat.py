@@ -16,17 +16,17 @@ class Combat:
         self.fled = False
 
         self.spell_lists = {
-                "Mage": {
-                    "Fireball": Spell("Fireball", mana_cost=20, base_damage=25, scaling_factor=0.6),
-                    "Ice Shard": Spell("Ice Shard", mana_cost=15, base_damage=20, scaling_factor=0.4),
-                    "Lightning Bolt": Spell("Lightning Bolt", mana_cost=25, base_damage=30, scaling_factor=0.7)
-                    },
-                "Healer": {
-                    "Heal": Spell("Heal", mana_cost=15, base_damage=20, scaling_factor=0.5),
-                    "Smite": Spell("Smite", mana_cost=10, base_damage=15, scaling_factor=0.3),
-                    "Blessing": Spell("Blessing", mana_cost=20, base_damage=15, scaling_factor=0.4)
-                    }
-                }
+            "Mage": {
+                "Fireball": Spell("Fireball", mana_cost=20, base_damage=25, scaling_factor=0.6),
+                "Ice Shard": Spell("Ice Shard", mana_cost=15, base_damage=20, scaling_factor=0.4),
+                "Lightning Bolt": Spell("Lightning Bolt", mana_cost=25, base_damage=30, scaling_factor=0.7)
+            },
+            "Healer": {
+                "Heal": Spell("Heal", mana_cost=15, base_damage=20, scaling_factor=0.5),
+                "Smite": Spell("Smite", mana_cost=10, base_damage=15, scaling_factor=0.3),
+                "Blessing": Spell("Blessing", mana_cost=20, base_damage=15, scaling_factor=0.4)
+            }
+        }
 
         self.setup_initiative()
 
@@ -40,10 +40,11 @@ class Combat:
             all_combatants.append(member)
 
         self.initiative_order = sorted(
-                all_combatants,
-                key=lambda x: x.initiative,
-                reverse=True
-                )
+            all_combatants,
+            key=lambda x: x.initiative,
+            reverse=True
+        )
+        print(f"Initiative Order: {[type(c).__name__ for c in self.initiative_order]}")
 
     def get_next_active_player(self):
         active_members = self.player_party.get_active_members()
@@ -117,22 +118,12 @@ class Combat:
             return f"Spell hit {total_effect}"
 
     def handle_initiative(self):
-        print(f"\nHandle Initiative - Before:")
-        print(f"Current index: {self.current_turn_index}")
-        print(f"Is player turn: {self.is_player_turn}")
-        
-        # Increment index and ensure it's within bounds
         self.current_turn_index = (self.current_turn_index + 1) % len(self.initiative_order)
-        
-        # Get new active combatant
         active_combatant = self.get_active_combatant()
-        # Toggle turn based on combatant type
-        self.is_player_turn = isinstance(active_combatant, (Player, NPC))
-        
-        print(f"\nHandle Initiative - After:")
-        print(f"New index: {self.current_turn_index}")
-        print(f"New is player turn: {self.is_player_turn}")
-        print(f"Active combatant type: {type(active_combatant).__name__}")
+        print(f"Current Turn Index: {self.current_turn_index}")
+        print(f"Active Combatant: {type(active_combatant).__name__}")
+        self.is_player_turn = isinstance(active_combatant, Player)
+        print(f"Is Player Turn: {self.is_player_turn}")
 
     def attack(self, target_index=None):
         if not self.player_party.is_party_alive():
@@ -327,7 +318,7 @@ class Combat:
                             if spell_name.lower() == 'back':
                                 continue
 
-                            print("\nChoose target:")
+                            print("Choose target:")
                             for i, status in enumerate(enemy_status):
                                 print(f"{i + 1}. {status}")
                             target = int(input(f"\nSelect target (1-{len(enemy_status)}): ")) - 1
@@ -354,7 +345,7 @@ class Combat:
                                 continue
 
                             if item_name not in active_combatant.inventory.items:
-                                print("\nInvalid item!")
+                                print("Invalid item!")
                                 continue
 
                             result = self.handle_combat_action(active_combatant, "use_item", None, None, item_name)

@@ -410,22 +410,19 @@ class TestCombat:
     def test_combat_turn_handling(self, monkeypatch):
         initial_index = self.combat.current_turn_index
         initial_turn = self.combat.is_player_turn
-        
-        print("\nBefore handle_initiative:")
-        print(f"Initiative order length: {len(self.combat.initiative_order)}")
-        print(f"Initiative order: {[type(c).__name__ for c in self.combat.initiative_order]}")
-        
+    
         def mock_randint(*_):
             return 1
         monkeypatch.setattr('random.randint', mock_randint)
-        
+    
+        print(f"Initial Turn Index: {initial_index}")
+        print(f"Initial Turn Flag: {initial_turn}")
+    
         self.combat.handle_initiative()
-        
-        print("\nAfter handle_initiative:")
-        print(f"Current turn index: {self.combat.current_turn_index}")
-        print(f"Is player turn: {self.combat.is_player_turn}")
-        print(f"Active combatant: {type(self.combat.get_active_combatant()).__name__}")
-        
+    
+        print(f"Updated Turn Index: {self.combat.current_turn_index}")
+        print(f"Updated Turn Flag: {self.combat.is_player_turn}")
+    
         assert self.combat.current_turn_index != initial_index, "Turn index should change"
         assert self.combat.is_player_turn != initial_turn, "Player turn should toggle"
 
@@ -497,6 +494,9 @@ class TestCombat:
 
         self.combat.handle_combat_action(self.player, "attack", target_index=0)
 
+        print(f"Initial Experience: {initial_exp}")
+        print(f"Updated Experience: {self.player.experience}")
+
         assert self.player.experience > initial_exp
 
     def test_boss_combat_mechanics(self):
@@ -554,7 +554,6 @@ class TestHandleCombatEncounter:
         inputs = iter(['1', '1'])
         monkeypatch.setattr('builtins.input', lambda _: next(inputs))
 
-        # Changed from handle_combat_encounter to instance method
         result = self.combat.handle_combat_encounter()
         assert result == "VICTORY"
 
@@ -562,7 +561,6 @@ class TestHandleCombatEncounter:
         self.player.stats["Health"] = 200
         self.enemy.stats["Health"] = 200
 
-        # Reduce the number of iterations for the test
         inputs = iter(['1', '1'] * 5)
         monkeypatch.setattr('builtins.input', lambda _: next(inputs))
 
@@ -577,7 +575,6 @@ class TestHandleCombatEncounter:
         mage_party.add_member(mage)
         mage_combat = Combat(mage_party, self.enemy_party)
         
-        # Add more inputs to handle potential additional turns
         inputs = iter(['2', 'Fireball', '1', '1', '1', '4'])  # Added more actions
         monkeypatch.setattr('builtins.input', lambda _: next(inputs))
         
