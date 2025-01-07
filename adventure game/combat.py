@@ -13,6 +13,7 @@ class Combat:
         self.is_player_turn = True
         self.active_player_index = 0
         self.active_enemy_index = 0
+        self.fled = False
 
         self.spell_lists = {
                 "Mage": {
@@ -109,14 +110,21 @@ class Combat:
                 target.stats["Health"] = 0
                 if isinstance(target, (Enemy, Boss)) and hasattr(caster, "player_class"):
                     self.handle_experience(caster, target)
+                    if not self.enemy_party.is_party_alive():
+                        return "VICTORY"
                 return f"DEFEAT {self.get_combatant_type(target)}"
 
             return f"Spell hit {total_effect}"
 
     def handle_initiative(self):
-        self.current_turn_index = (self.current_turn_index + 1) % len(self.initiative_order)
-        active_combatant = self.get_active_combatant()
-        self.is_player_turn = isinstance(active_combatant, (Player, NPC))
+        current_is_player = self.is_player_turn
+        while True:
+            self.current_turn_index = (self.current_turn_index + 1) % len(self.initiative_order)
+            active_combatant = self.get_active_combatant()
+            self.is_player_turn = isinstance(active_combatant, (Player, NPC))
+            # Make sure we actually changed turns between player and enemy
+            if self.is_player_turn != current_is_player:
+                break
 
     def attack(self, target_index=None):
         if not self.player_party.is_party_alive():
@@ -146,11 +154,12 @@ class Combat:
 
             if defender.stats["Health"] <= 0:
                 defender.stats["Health"] = 0
-                if isinstance(defender, (Enemy, Boss)) and isinstance(attacker, Player):
-                    self.handle_experience(attacker, defender)
+                if isinstance(defender, (Enemy, Boss)):
+                    if isinstance(attacker, Player):
+                        self.handle_experience(attacker, defender)
                     if not self.enemy_party.get_active_members():
                         return "VICTORY"
-                elif not self.player_party.get_active_members():
+                if not self.player_party.get_active_members():
                     return "DEFEAT"
             return f"HIT_{actual_damage}"
         else:
@@ -251,7 +260,7 @@ class Combat:
             print("Defeat! Your party has fallen!")
 
     def handle_combat_encounter(self):
-        max_iterations = 1  # Set a maximum number of iterations to prevent infinite loop
+        max_iterations = 10  # Set a maximum number of iterations to prevent infinite loop
         iteration_count = 0
 
         while iteration_count < max_iterations:
@@ -319,7 +328,8 @@ class Combat:
                                 result = self.handle_combat_action(active_combatant, "cast_spell", target, spell_name)
                                 self.handle_combat_result(result)
                                 if result.startswith("DEFEAT"):
-                                    return "VICTORY"
+                                    if not self.enemy_party.is_party_alive():
+                                        return "VICTORY"
                                 self.handle_initiative()
                         elif action == 3:
                             if not active_combatant.inventory.items:
@@ -346,9 +356,11 @@ class Combat:
                             flee_chance = random.randint(1, 100)
                             if flee_chance <= 50:
                                 print("Successfully fled!")
-                                return "FLED"
-                            print("Failed to flee!")
+                                self.fled = True
+                            else:
+                                print("Failed to flee!")
                             self.handle_initiative()
+
                     except ValueError:
                         print("Please enter a valid number!")
                         continue
@@ -367,5 +379,7 @@ class Combat:
                     return result
                 self.handle_initiative()
 
+                if self.fled:
+                    return "FLED"
         print("Reached maximum iterations. Possible infinite loop detected.")
         return "INFINITE_LOOP_DETECTED"
