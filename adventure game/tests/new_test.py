@@ -406,26 +406,28 @@ class TestCombat:
         assert len(initial_order) == len(all_combatants)
         assert all(hasattr(combatant, 'initiative') for combatant in initial_order)
 
+    @pytest.mark.timeout(3)  # 3 second timeout
     def test_combat_turn_handling(self, monkeypatch):
         initial_index = self.combat.current_turn_index
         initial_turn = self.combat.is_player_turn
-
-        def mock_randint(_):
+        
+        print("\nBefore handle_initiative:")
+        print(f"Initiative order length: {len(self.combat.initiative_order)}")
+        print(f"Initiative order: {[type(c).__name__ for c in self.combat.initiative_order]}")
+        
+        def mock_randint(*_):
             return 1
         monkeypatch.setattr('random.randint', mock_randint)
-
-        print(f"Initial Turn Index: {initial_index}")
-        print(f"Initial Turn Flag: {initial_turn}")
-
+        
         self.combat.handle_initiative()
-
-        print(f"Updated Turn Index: {self.combat.current_turn_index}")
-        print(f"Updated Turn Flag: {self.combat.is_player_turn}")
-
-        assert self.combat.current_turn_index != initial_index
-
-        if len(self.combat.initiative_order) > 1:
-            assert self.combat.is_player_turn != initial_turn
+        
+        print("\nAfter handle_initiative:")
+        print(f"Current turn index: {self.combat.current_turn_index}")
+        print(f"Is player turn: {self.combat.is_player_turn}")
+        print(f"Active combatant: {type(self.combat.get_active_combatant()).__name__}")
+        
+        assert self.combat.current_turn_index != initial_index, "Turn index should change"
+        assert self.combat.is_player_turn != initial_turn, "Player turn should toggle"
 
     def test_basic_attack_mechanics(self):
         initial_enemy_health = self.enemy.stats["Health"]
@@ -568,18 +570,26 @@ class TestHandleCombatEncounter:
         print(f"Combat result: {result}")
         assert result in ["VICTORY", "DEFEAT", "FLED", "INFINITE_LOOP_DETECTED"]
 
+    @pytest.mark.timeout(5)  # 5 second timeout
     def test_mage_combat_scenario(self, monkeypatch):
         mage = Player("Mage")
         mage_party = Party("player")
         mage_party.add_member(mage)
         mage_combat = Combat(mage_party, self.enemy_party)
-
-        inputs = iter(['2', 'Fireball', '1'])
+        
+        # Add more inputs to handle potential additional turns
+        inputs = iter(['2', 'Fireball', '1', '1', '1', '4'])  # Added more actions
         monkeypatch.setattr('builtins.input', lambda _: next(inputs))
-
-        # Changed from handle_combat_encounter to instance method
+        
+        print("\nStarting mage combat test")
+        print(f"Initial enemy health: {mage_combat.enemy_party.members[0].stats['Health']}")
+        
         result = mage_combat.handle_combat_encounter()
-        assert result in ["VICTORY", "DEFEAT", "FLED"]
+        
+        print(f"\nCombat result: {result}")
+        print(f"Final enemy health: {mage_combat.enemy_party.members[0].stats['Health']}")
+        
+        assert result in ["VICTORY", "DEFEAT", "FLED"], f"Unexpected result: {result}"
 
 class TestParty:
     def setup_method(self):

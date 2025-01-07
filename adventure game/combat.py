@@ -117,14 +117,22 @@ class Combat:
             return f"Spell hit {total_effect}"
 
     def handle_initiative(self):
-        current_is_player = self.is_player_turn
-        while True:
-            self.current_turn_index = (self.current_turn_index + 1) % len(self.initiative_order)
-            active_combatant = self.get_active_combatant()
-            self.is_player_turn = isinstance(active_combatant, (Player, NPC))
-            # Make sure we actually changed turns between player and enemy
-            if self.is_player_turn != current_is_player:
-                break
+        print(f"\nHandle Initiative - Before:")
+        print(f"Current index: {self.current_turn_index}")
+        print(f"Is player turn: {self.is_player_turn}")
+        
+        # Increment index and ensure it's within bounds
+        self.current_turn_index = (self.current_turn_index + 1) % len(self.initiative_order)
+        
+        # Get new active combatant
+        active_combatant = self.get_active_combatant()
+        # Toggle turn based on combatant type
+        self.is_player_turn = isinstance(active_combatant, (Player, NPC))
+        
+        print(f"\nHandle Initiative - After:")
+        print(f"New index: {self.current_turn_index}")
+        print(f"New is player turn: {self.is_player_turn}")
+        print(f"Active combatant type: {type(active_combatant).__name__}")
 
     def attack(self, target_index=None):
         if not self.player_party.is_party_alive():
