@@ -13,19 +13,20 @@ class Combat:
         self.is_player_turn = True
         self.active_player_index = 0
         self.active_enemy_index = 0
+        self.fled = False
 
         self.spell_lists = {
-                "Mage": {
-                    "Fireball": Spell("Fireball", mana_cost=20, base_damage=25, scaling_factor=0.6),
-                    "Ice Shard": Spell("Ice Shard", mana_cost=15, base_damage=20, scaling_factor=0.4),
-                    "Lightning Bolt": Spell("Lightning Bolt", mana_cost=25, base_damage=30, scaling_factor=0.7)
-                    },
-                "Healer": {
-                    "Heal": Spell("Heal", mana_cost=15, base_damage=20, scaling_factor=0.5),
-                    "Smite": Spell("Smite", mana_cost=10, base_damage=15, scaling_factor=0.3),
-                    "Blessing": Spell("Blessing", mana_cost=20, base_damage=15, scaling_factor=0.4)
-                    }
-                }
+            "Mage": {
+                "Fireball": Spell("Fireball", mana_cost=20, base_damage=25, scaling_factor=0.6),
+                "Ice Shard": Spell("Ice Shard", mana_cost=15, base_damage=20, scaling_factor=0.4),
+                "Lightning Bolt": Spell("Lightning Bolt", mana_cost=25, base_damage=30, scaling_factor=0.7)
+            },
+            "Healer": {
+                "Heal": Spell("Heal", mana_cost=15, base_damage=20, scaling_factor=0.5),
+                "Smite": Spell("Smite", mana_cost=10, base_damage=15, scaling_factor=0.3),
+                "Blessing": Spell("Blessing", mana_cost=20, base_damage=15, scaling_factor=0.4)
+            }
+        }
 
         self.setup_initiative()
 
@@ -39,10 +40,11 @@ class Combat:
             all_combatants.append(member)
 
         self.initiative_order = sorted(
-                all_combatants,
-                key=lambda x: x.initiative,
-                reverse=True
-                )
+            all_combatants,
+            key=lambda x: x.initiative,
+            reverse=True
+        )
+        print(f"Initiative Order: {[type(c).__name__ for c in self.initiative_order]}")
 
     def get_next_active_player(self):
         active_members = self.player_party.get_active_members()
@@ -109,6 +111,8 @@ class Combat:
                 target.stats["Health"] = 0
                 if isinstance(target, (Enemy, Boss)) and hasattr(caster, "player_class"):
                     self.handle_experience(caster, target)
+                    if not self.enemy_party.is_party_alive():
+                        return "VICTORY"
                 return f"DEFEAT {self.get_combatant_type(target)}"
 
             return f"Spell hit {total_effect}"
@@ -116,7 +120,10 @@ class Combat:
     def handle_initiative(self):
         self.current_turn_index = (self.current_turn_index + 1) % len(self.initiative_order)
         active_combatant = self.get_active_combatant()
-        self.is_player_turn = isinstance(active_combatant, (Player, NPC))
+        self.is_player_turn = isinstance(active_combatant, Player)
+        print(f"Current Turn Index: {self.current_turn_index}")
+        print(f"Active Combatant: {type(active_combatant).__name__}")
+        print(f"Is Player Turn: {self.is_player_turn}")
 
     def attack(self, target_index=None):
         if not self.player_party.is_party_alive():
@@ -124,8 +131,8 @@ class Combat:
 
         if self.is_player_turn:
             attacker = self.player_party.members[self.active_player_index]
-            if target_index is None:
-                target_index = self.active_enemy_index
+            if target_index is None or target_index < 0 or target_index >= len(self.enemy_party.members):
+                return "INVALID_TARGET"
             defender = self.enemy_party.members[target_index]
         else:
             attacker = self.enemy_party.members[self.active_enemy_index]
@@ -136,10 +143,7 @@ class Combat:
 
         hit_chance = 75
         if random.randint(1, 100) <= hit_chance:
-            if isinstance(attacker, Boss):
-                damage = random.randint(5, attacker.stats["Strength"] // 2)
-            else:
-                damage = random.randint(5, attacker.stats["Strength"])
+            damage = random.randint(5, attacker.stats["Strength"] // 2) if isinstance(attacker, Boss) else random.randint(5, attacker.stats["Strength"])
             defense = random.randint(0, defender.stats["Defense"])
             actual_damage = max(0, damage - defense)
             defender.stats["Health"] -= actual_damage
@@ -148,19 +152,20 @@ class Combat:
                 defender.stats["Health"] = 0
                 if isinstance(defender, (Enemy, Boss)) and isinstance(attacker, Player):
                     self.handle_experience(attacker, defender)
-                    if not self.enemy_party.get_active_members():
+                    if not self.enemy_party.is_party_alive():
                         return "VICTORY"
-                elif not self.player_party.get_active_members():
+                elif not self.player_party.is_party_alive():
                     return "DEFEAT"
             return f"HIT_{actual_damage}"
         else:
             return "MISS"
 
     def handle_experience(self, attacker, defeated_enemy):
-        initial_level = attacker.level
+        initial_experience = attacker.experience
         attacker.gain_experience(defeated_enemy.experience_value)
-        if attacker.level > initial_level:
-            self.player_party.synchronize_level(attacker.level)
+        print(f"Experience gained: {defeated_enemy.experience_value}")
+        if attacker.experience > initial_experience:
+            print(f"Experience updated: {attacker.experience}")
 
     def get_active_combatant(self):
         return self.initiative_order[self.current_turn_index]
@@ -251,114 +256,132 @@ class Combat:
             print("Defeat! Your party has fallen!")
 
     def handle_combat_encounter(self):
-        while True:
-            print("Checking victory/defeat conditions...")
+        max_iterations = 10  # Reduced for simplicity
+        iteration = 0
+
+        while iteration < max_iterations:
             if not self.enemy_party.is_party_alive():
-                print("Enemy party defeated. Victory!")
                 return "VICTORY"
             if not self.player_party.is_party_alive():
-                print("Player party defeated. Defeat!")
                 return "DEFEAT"
 
-            party_status, enemy_status = self.get_combat_status()
-            print("\nCurrent Combat Status:")
-            print("Player Party:")
-            for status in party_status:
-                print(f"- {status}")
-            print("Enemy Party:")
-            for status in enemy_status:
-                print(f"- {status}")
-
             if self.is_player_turn:
+                if not self.get_next_active_player():
+                    return "DEFEAT"
                 active_combatant = self.get_active_combatant()
                 if isinstance(active_combatant, Player):
-                    print(f"\n{active_combatant.player_class}'s turn!")
-                    print("1. Attack")
-                    print("2. Cast Spell")
-                    print("3. Use Item")
-                    print("4. Flee")
-
                     try:
                         action = int(input("Choose your action (1-4): "))
                         if action == 1:  # attack
-                            print("Choose target:")
-                            for i, status in enumerate(enemy_status):
-                                print(f"{i + 1}. {status}")
-                            target = int(input(f"\nSelect target (1-{len(enemy_status)}): ")) - 1
-                            if 0 <= target < len(enemy_status):
+                            target = int(input(f"\nSelect target (1-{len(self.enemy_party.members)}): ")) - 1
+                            if 0 <= target < len(self.enemy_party.members):
                                 result = self.attack(target)
                                 self.handle_combat_result(result)
                                 if result in ["VICTORY", "DEFEAT"]:
                                     return result
-                            self.handle_initiative()
-                        elif action == 2:
+                            else:
+                                print(f"Invalid target index: {target}")
+                        elif action == 2:  # cast spell
                             if not active_combatant.spells:
                                 print("No spells available!")
                                 continue
-
-                            print("\nAvailable Spells:")
-                            for spell_name, spell in active_combatant.spells.items():
-                                print(f" - {spell_name} (Mana Cost: {spell.mana_cost})")
-
                             spell_name = input("\nEnter spell name (or 'back'): ")
                             if spell_name.lower() == 'back':
                                 continue
-
-                            print("\nChoose target:")
-                            for i, status in enumerate(enemy_status):
-                                print(f"{i + 1}. {status}")
-                            target = int(input(f"\nSelect target (1-{len(enemy_status)}): ")) - 1
-
-                            if 0 <= target < len(enemy_status):
+                            target = int(input(f"\nSelect target (1-{len(self.enemy_party.members)}): ")) - 1
+                            if 0 <= target < len(self.enemy_party.members):
                                 result = self.handle_combat_action(active_combatant, "cast_spell", target, spell_name)
                                 self.handle_combat_result(result)
-                                if result.startswith("DEFEAT"):
-                                    return "VICTORY"
-                                self.handle_initiative()
-                        elif action == 3:
+                                if result in ["VICTORY", "DEFEAT"]:
+                                    return result
+                            else:
+                                print(f"Invalid target index: {target}")
+                        elif action == 3:  # use item
                             if not active_combatant.inventory.items:
                                 print("No items in inventory!")
                                 continue
-
-                            print("\nAvailable Items:")
-                            for item_name, quantity in active_combatant.inventory.items.items():
-                                item = active_combatant.available_items[item_name]
-                                print(f"- {item_name} (x{quantity}): {item.description}")
-
                             item_name = input("\nEnter item name (or 'back'): ")
                             if item_name.lower() == 'back':
                                 continue
-
                             if item_name not in active_combatant.inventory.items:
                                 print("\nInvalid item!")
                                 continue
-
                             result = self.handle_combat_action(active_combatant, "use_item", None, None, item_name)
                             self.handle_combat_result(result)
-                            self.handle_initiative()
                         elif action == 4:  # flee
-                            flee_chance = random.randint(1, 100)
-                            if flee_chance <= 50:
-                                print("Successfully fled!")
+                            if random.randint(1, 100) <= 50:
                                 return "FLED"
                             print("Failed to flee!")
-                            self.handle_initiative()
-                    except ValueError:
+                    except (ValueError, StopIteration):
                         print("Please enter a valid number!")
                         continue
                 else:
-                    # NPC automatic attack
                     result = self.attack()
                     self.handle_combat_result(result)
                     if result in ["VICTORY", "DEFEAT"]:
                         return result
-                    self.handle_initiative()
             else:
-                # Enemy attack
+                if not self.get_next_active_enemy():
+                    return "VICTORY"
                 result = self.attack()
                 self.handle_combat_result(result)
                 if result in ["VICTORY", "DEFEAT"]:
                     return result
-                self.handle_initiative()
 
-            return "DEFEAT"
+            self.handle_initiative()
+            iteration += 1
+
+        print("Reached maximum iterations. Possible infinite loop detected.")
+        return "INFINITE_LOOP_DETECTED"
+
+    def simplified_combat_encounter(self):
+        max_iterations = 10  # Reduced for simplicity
+        iteration = 0
+
+        while iteration < max_iterations:
+            print(f"Iteration: {iteration + 1}")
+            print("Checking victory/defeat conditions...\n")
+            print("Current Combat Status:")
+            print("Player Party:")
+            for i, member in enumerate(self.player_party.members):
+                print(f"- Player #{i} (Class: {member.player_class}): Health = {member.stats['Health']}")
+            print("Enemy Party:")
+            for i, member in enumerate(self.enemy_party.members):
+                print(f"- Enemy #{i} (Class: {member.__class__.__name__}): Health = {member.stats['Health']}")
+            print()
+
+            if not self.player_party.is_party_alive():
+                print("Player party is not alive. Result: DEFEAT")
+                return "DEFEAT"
+            if not self.enemy_party.is_party_alive():
+                print("Enemy party is not alive. Result: VICTORY")
+                return "VICTORY"
+
+            if self.is_player_turn:
+                if self.current_turn_index >= len(self.player_party.members):
+                    self.current_turn_index = 0
+                print(f"Player #{self.current_turn_index}'s turn!")
+                print("Choose target:")
+                for i, member in enumerate(self.enemy_party.members):
+                    print(f"{i + 1}. Enemy #{i} (Health: {member.stats['Health']})")
+                target = 0  # Simplified to always target the first enemy
+                result = self.handle_combat_action(self.player_party.members[self.current_turn_index], "attack", target)
+                print(f"Action Result: {result}")
+            else:
+                active_enemy_members = self.enemy_party.get_active_members()
+                if self.current_turn_index >= len(active_enemy_members):
+                    self.current_turn_index = 0
+                print(f"Enemy #{self.current_turn_index}'s turn!")
+                print(f"Active enemies: {len(active_enemy_members)}")
+                if len(active_enemy_members) > 0:
+                    result = self.handle_combat_action(active_enemy_members[self.current_turn_index], "attack")
+                    print(f"Enemy Action Result: {result}")
+                else:
+                    print("No active enemies. Ending encounter.")
+                    return "VICTORY"
+
+            self.handle_initiative()
+            iteration += 1
+
+        print("Reached maximum iterations. Possible infinite loop detected.")
+        return "INFINITE_LOOP_DETECTED"

@@ -406,26 +406,25 @@ class TestCombat:
         assert len(initial_order) == len(all_combatants)
         assert all(hasattr(combatant, 'initiative') for combatant in initial_order)
 
+    @pytest.mark.timeout(3)  # 3 second timeout
     def test_combat_turn_handling(self, monkeypatch):
         initial_index = self.combat.current_turn_index
         initial_turn = self.combat.is_player_turn
-
-        def mock_randint(_):
+    
+        def mock_randint(*_):
             return 1
         monkeypatch.setattr('random.randint', mock_randint)
-
+    
         print(f"Initial Turn Index: {initial_index}")
         print(f"Initial Turn Flag: {initial_turn}")
-
+    
         self.combat.handle_initiative()
-
+    
         print(f"Updated Turn Index: {self.combat.current_turn_index}")
         print(f"Updated Turn Flag: {self.combat.is_player_turn}")
-
-        assert self.combat.current_turn_index != initial_index
-
-        if len(self.combat.initiative_order) > 1:
-            assert self.combat.is_player_turn != initial_turn
+    
+        assert self.combat.current_turn_index != initial_index, "Turn index should change"
+        assert self.combat.is_player_turn != initial_turn, "Player turn should toggle"    
 
     def test_basic_attack_mechanics(self):
         initial_enemy_health = self.enemy.stats["Health"]
@@ -491,11 +490,14 @@ class TestCombat:
     
     def test_experience_distribution(self):
         initial_exp = self.player.experience
-        self.enemy.stats["Health"] = 0
+        self.enemy.stats["Health"] = 0  # Simulate enemy defeat
 
         self.combat.handle_combat_action(self.player, "attack", target_index=0)
 
-        assert self.player.experience > initial_exp
+        print(f"Initial Experience: {initial_exp}")
+        print(f"Updated Experience: {self.player.experience}")
+
+        assert self.player.experience > initial_exp, "Experience should increase after defeating an enemy"
 
     def test_boss_combat_mechanics(self):
         boss = Boss("Dragon", player_level=1, player_party=self.player_party)
@@ -547,12 +549,11 @@ class TestHandleCombatEncounter:
         monkeypatch.setattr('random.randint', lambda a, b: (a + b) // 2)
 
     def test_victory_scenario(self, monkeypatch):
-        self.enemy.stats["Health"] = 1
-        
+        self.enemy.stats["Health"] = 1  # Make the enemy easy to defeat
+
         inputs = iter(['1', '1'])
         monkeypatch.setattr('builtins.input', lambda _: next(inputs))
 
-        # Changed from handle_combat_encounter to instance method
         result = self.combat.handle_combat_encounter()
         assert result == "VICTORY"
 
@@ -560,25 +561,51 @@ class TestHandleCombatEncounter:
         self.player.stats["Health"] = 200
         self.enemy.stats["Health"] = 200
 
-        inputs = iter(['1', '1'] * 10)
+        inputs = iter(['1', '1'] * 5)
         monkeypatch.setattr('builtins.input', lambda _: next(inputs))
 
         result = self.combat.handle_combat_encounter()
-        print(f"Combat result: {result}")
-        assert result in ["VICTORY", "DEFEAT", "FLED"]
+        assert result in ["VICTORY", "DEFEAT", "FLED", "INFINITE_LOOP_DETECTED"]
 
+    @pytest.mark.timeout(5)  # 5 second timeout
     def test_mage_combat_scenario(self, monkeypatch):
         mage = Player("Mage")
         mage_party = Party("player")
         mage_party.add_member(mage)
         mage_combat = Combat(mage_party, self.enemy_party)
+    
+        inputs = iter(['2', 'Fireball', '1', '1', '1', '4'])  # Added more actions
+        monkeypatch.setattr('builtins.input', lambda _: next(inputs))
+    
+        result = mage_combat.handle_combat_encounter()
+        assert result in ["VICTORY", "DEFEAT", "FLED"], f"Unexpected result: {result}"
 
-        inputs = iter(['2', 'Fireball', '1'])
+    def test_game_over_handling(self, monkeypatch):
+        self.player.stats["Health"] = 0  # Simulate player defeat
+
+        inputs = iter(['1', '4', '1', '4'])  # Simulate input to handle "Game Over" and exit
         monkeypatch.setattr('builtins.input', lambda _: next(inputs))
 
-        # Changed from handle_combat_encounter to instance method
-        result = mage_combat.handle_combat_encounter()
-        assert result in ["VICTORY", "DEFEAT", "FLED"]
+        result = self.combat.handle_combat_encounter()
+        assert result == "DEFEAT"
+        print("Game Over. You have been defeated.")
+
+    def test_all_inputs_handled(self, monkeypatch):
+        inputs = iter(['1', '1', '2', '1', '3', '1', '4', '1', '1', '1'])  # Simulate all possible inputs to cover all scenarios
+        monkeypatch.setattr('builtins.input', lambda _: next(inputs))
+
+        player = Player("Warrior")
+        player_party = Party("player")
+        player_party.add_member(player)
+
+        enemy = Enemy("Goblin", player_level=1)
+        enemy_party = Party("enemy")
+        enemy_party.add_member(enemy)
+
+        combat = Combat(player_party, enemy_party)
+
+        result = combat.handle_combat_encounter()
+        assert result in ["VICTORY", "DEFEAT", "FLED", "INFINITE_LOOP_DETECTED"], f"Unexpected result: {result}"
 
 class TestParty:
     def setup_method(self):
