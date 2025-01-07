@@ -256,7 +256,7 @@ class Combat:
             print("Defeat! Your party has fallen!")
 
     def handle_combat_encounter(self):
-        max_iterations = 100
+        max_iterations = 10  # Reduced for simplicity
         iteration = 0
 
         while iteration < max_iterations:
@@ -292,8 +292,8 @@ class Combat:
                             if 0 <= target < len(self.enemy_party.members):
                                 result = self.handle_combat_action(active_combatant, "cast_spell", target, spell_name)
                                 self.handle_combat_result(result)
-                                if result.startswith("DEFEAT"):
-                                    return "VICTORY"
+                                if result in ["VICTORY", "DEFEAT"]:
+                                    return result
                             else:
                                 print(f"Invalid target index: {target}")
                         elif action == 3:  # use item
@@ -312,7 +312,7 @@ class Combat:
                             if random.randint(1, 100) <= 50:
                                 return "FLED"
                             print("Failed to flee!")
-                    except ValueError:
+                    except (ValueError, StopIteration):
                         print("Please enter a valid number!")
                         continue
                 else:
