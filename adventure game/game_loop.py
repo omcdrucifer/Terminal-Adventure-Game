@@ -150,9 +150,12 @@ class Game:
                 elif result == "FLED":
                     self.current_location = "town"
             elif result["type"] == "recruitment":
-                # Type cast the result
                 recruitment_result = cast(RecruitmentResult, result)
                 self.handle_recruitment(recruitment_result["content"])
+            elif result["type"] == "game_over":
+                print("\nGame Over!") # should return the game to the main menu on game over
+                self.playing = False
+                self.main_menu()
 
     # i still need to write an actual story, these menus are placeholder concepts only
     def town_menu(self):
