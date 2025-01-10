@@ -448,7 +448,7 @@ class TestCombat:
             assert self.enemy.stats["Health"] < initial_enemy_health
 
     def test_combat_victory_conditions(self, monkeypatch):
-        self.enemy.stats["Health"] = 1
+        self.enemy.stats["Health"] = 0
 
         def mock_random(*_):
             return 75
@@ -458,7 +458,7 @@ class TestCombat:
         assert result == "VICTORY"
 
     def test_combat_defeat_conditions(self, monkeypatch):
-        self.player.stats["Health"] = 1
+        self.player.stats["Health"] = 0
 
         monkeypatch.setattr('random.randint', lambda _: 75)
 
