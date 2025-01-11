@@ -192,7 +192,6 @@ class Player:
             if stat in target.stats:
                 if stat not in self.active_buffs:
                     self.active_buffs[stat] = []
-
                 self.active_buffs[stat].append(item.effect_value)
                 target.stats[stat] += item.effect_value
 
@@ -300,10 +299,3 @@ class Archer(Player):
                 description="Temporarily increases agility by 10",
                 use_text="You drink the elixir and feel faster!"
                 )
-
-conan = Warrior("Conan")
-print(f"Initial Stats:", conan.stats)
-conan.use_item("Strength Elixir")
-print(f"After Buff:", conan.stats)
-input("Press Enter to continue after 30 seconds...")
-print("After Buff Expires:", conan.stats)
