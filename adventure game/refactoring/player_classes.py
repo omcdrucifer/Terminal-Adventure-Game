@@ -194,7 +194,6 @@ class Player:
                     self.active_buffs[stat] = []
                 self.active_buffs[stat].append(item.effect_value)
                 target.stats[stat] += item.effect_value
-
                 success = True
                 message = f"{target.name} gained {item.effect_value} {stat}"
 

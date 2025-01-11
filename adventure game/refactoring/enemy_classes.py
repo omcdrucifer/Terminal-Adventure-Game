@@ -49,6 +49,7 @@ class Goblin(Enemy):
         self.stats["Strength"] = 10 + 3 * (self.level - 1)
         self.stats["Health"] = 50 + 10 * (self.level - 1)
         self.stats["Defense"] = 5 + 1 * (self.level - 1)
+        self.stats["Agility"] = 5 + 2 * (self.level - 1)
 
     @property
     def max_health(self):
