@@ -215,7 +215,7 @@ class NPC:
 
 class Fighter(NPC):
     def __init__(self, name):
-        super().__init__(name, npc_class="Fighter")
+        super().__init__(name, "Fighter")
 
     def update_stats(self):
         self.stats["Strength"] = 20 + 5 * (self.level - 1)
@@ -238,7 +238,7 @@ class Fighter(NPC):
 
 class Healer(NPC):
     def __init__(self, name):
-        super().__init__(name, npc_class="Healer")
+        super().__init__(name, "Healer")
         self.current_mana = 0 
         self.max_mana = 0
         self.spells = initialize_healer_spells()
@@ -270,7 +270,7 @@ class Healer(NPC):
 
 class Rogue(NPC):
     def __init__(self, name):
-        super().__init__(name, npc_class="Rogue")
+        super().__init__(name, "Rogue")
 
     def update_stats(self):
         self.stats["Strength"] = 15 + 3 * (self.level - 1)

@@ -219,7 +219,7 @@ class Player:
 
 class Warrior(Player):
     def __init__(self, name):
-        super().__init__(name, player_class="Warrior")
+        super().__init__(name, "Warrior")
 
     def update_stats(self):
         self.stats["Strength"] = 20 + 5 * (self.level - 1)
@@ -242,7 +242,7 @@ class Warrior(Player):
 
 class Mage(Player):
     def __init__(self, name):
-        super().__init__(name, player_class="Mage")
+        super().__init__(name, "Mage")
         self.current_mana = 0 
         self.max_mana = 0
         self.spells = initialize_mage_spells()
@@ -275,7 +275,7 @@ class Mage(Player):
 class Archer(Player):
     def __init__(self, name):
         self.name = name
-        super().__init__(name, player_class="Archer")
+        super().__init__(name, "Archer")
 
     def update_stats(self):
         self.stats["Strength"] = 15 + 3 * (self.level - 1)
