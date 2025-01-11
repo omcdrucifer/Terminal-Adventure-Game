@@ -60,6 +60,13 @@ def initialize_common_items():
                 effect_value=10,
                 description="Temporarily increases strength by 10",
                 use_text="You drink the elixir and feel stronger!"
+                ),
+            "Agility Elixir": Item(
+                name="Agility Elixir",
+                effect_type="buff_agility",
+                effect_value=10,
+                description="Temporarily increases agility by 10",
+                use_text="You drink the elixir and feel faster!"
                 )
             }
 
@@ -76,6 +83,8 @@ class Inventory:
             self.add_item("Mana Potion", 2)
         if self.owner.npc_class == "Fighter":
             self.add_item("Strength Elixir", 1)
+        if self.owner.npc_class == "Rogue":
+            self.add_item("Agility Elixir", 1)
 
     def add_item(self, item_name, quantity=1):
         current_quantity = self.items.get(item_name, 0)
@@ -202,8 +211,9 @@ class NPC:
         print(f"{self.name} leveled up to {self.level}!")
 
 class Fighter(NPC):
-    def __init__(self):
-        super().__init__(name=super.__name__, npc_class="Fighter")
+    def __init__(self, name):
+        self.name = name
+        super().__init__(name, npc_class="Fighter")
 
     def update_stats(self):
         self.stats["Strength"] = 20 + 5 * (self.level - 1)
@@ -223,11 +233,11 @@ class Fighter(NPC):
                 description="Temporarily increases strength by 10",
                 use_text="You drink the elixir and feel stronger!"
                 )
-        pass
 
 class Healer(NPC):
-    def __init__(self):
-        super().__init__(name=super.__name__, npc_class="Healer")
+    def __init__(self, name):
+        self.name = name
+        super().__init__(name, npc_class="Healer")
         self.current_mana = 0 
         self.max_mana = 0
         self.spells = initialize_healer_spells()
@@ -252,15 +262,15 @@ class Healer(NPC):
                 description="Restores 30 mana points",
                 use_text="You drink the potion and feel restored"
                 )
-        pass
 
     @property
     def max_health(self):
         return 60 + 10 * (self.level - 1)
 
 class Rogue(NPC):
-    def __init__(self):
-        super().__init__(name=super.__name__, npc_class="Rogue")
+    def __init__(self, name):
+        self.name = name
+        super().__init__(name, npc_class="Rogue")
 
     def update_stats(self):
         self.stats["Strength"] = 15 + 3 * (self.level - 1)
@@ -273,4 +283,10 @@ class Rogue(NPC):
         return 80 + 15 * (self.level - 1)
 
     def initialize_class_features(self):
-        pass
+        self.available_items["Agility Elixir"] = Item(
+                name="Agility Elixir",
+                effect_type="buff_agility",
+                effect_value=10,
+                description="Temporarily increases agility by 10",
+                use_text="You drink the elixir and feel faster!"
+                )

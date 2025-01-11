@@ -64,6 +64,13 @@ def initialize_common_items():
                 effect_value=10,
                 description="Temporarily increases strength by 10",
                 use_text="You drink the elixir and feel stronger!"
+                ),
+            "Agility Elixir": Item(
+                name="Agility Elixir",
+                effect_type="buff_agility",
+                effect_value=10,
+                description="Temporarily increases agility by 10",
+                use_text="You drink the elixir and feel faster!"
                 )
             }
 
@@ -80,6 +87,8 @@ class Inventory:
             self.add_item("Mana Potion", 2)
         if self.owner.player_class == "Warrior":
             self.add_item("Strength Elixir", 1)
+        if self.owner.player_class == "Archer":
+            self.add_item("Agility Elixir", 2)
 
     def add_item(self, item_name, quantity=1):
         current_quantity = self.items.get(item_name, 0)
@@ -124,13 +133,15 @@ class Player:
         self.inventory = Inventory(owner=self)
         self.available_items = initialize_common_items()
         self.active_buffs = {}
-        self.max_health = 0
         self.current_mana = 0
         self.max_mana = 0
 
         self.update_stats()
         self.initialize_class_features()
 
+    @property
+    def max_health(self):
+        return 0
     def update_stats(self):
         pass
 
@@ -206,8 +217,8 @@ class Player:
         print(f"{self.name} leveled up to {self.level}!")
 
 class Warrior(Player):
-    def __init__(self):
-        super().__init__(name=super.__name__, player_class="Warrior")
+    def __init__(self, name):
+        super().__init__(name, player_class="Warrior")
 
     def update_stats(self):
         self.stats["Strength"] = 20 + 5 * (self.level - 1)
@@ -227,11 +238,11 @@ class Warrior(Player):
                 description="Temporarily increases strength by 10",
                 use_text="You drink the elixir and feel stronger!"
                 )
-        pass
 
 class Mage(Player):
-    def __init__(self):
-        super().__init__(name=super.__name__, player_class="Mage")
+    def __init__(self, name):
+        self.name = name
+        super().__init__(name, player_class="Mage")
         self.current_mana = 0 
         self.max_mana = 0
         self.spells = initialize_mage_spells()
@@ -256,15 +267,15 @@ class Mage(Player):
                 description="Restores 30 mana points",
                 use_text="You drink the potion and feel restored"
                 )
-        pass
 
     @property
     def max_health(self):
         return 60 + 10 * (self.level - 1)
 
 class Archer(Player):
-    def __init__(self):
-        super().__init__(name=super.__name__, player_class="Archer")
+    def __init__(self, name):
+        self.name = name
+        super().__init__(name, player_class="Archer")
 
     def update_stats(self):
         self.stats["Strength"] = 15 + 3 * (self.level - 1)
@@ -277,4 +288,13 @@ class Archer(Player):
         return 80 + 15 * (self.level - 1)
 
     def initialize_class_features(self):
-        pass
+        self.available_items["Agility Elixir"] = Item(
+                name="Agility Elixir",
+                effect_type="buff_agility",
+                effect_value=10,
+                description="Temporarily increases agility by 10",
+                use_text="You drink the elixir and feel faster!"
+                )
+
+conan = Warrior("Conan")
+print(conan.stats)
