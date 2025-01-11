@@ -21,3 +21,8 @@ so that when the game does try to use physical attack logic with strength values
 be less and they will have to rely more on magic to govern their big attacks. That should allow
 them to move slower than the player and give the player weighted odds of success. I am sure
 there will be rebalancing whenever I get a chance to test the new combat logic.
+
+Another major change I made is I no longer am tethering the NPC levels to the player level
+directly in the class logic. I am learning that it's better to work turn cleanup in the game
+logic since it's a text-based, turn-based game. I can just declare the npc level variable equal
+to the player level in the game loop as the party is constructed. 
