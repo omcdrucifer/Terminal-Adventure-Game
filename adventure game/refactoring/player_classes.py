@@ -141,7 +141,8 @@ class Player:
 
     @property
     def max_health(self):
-        return 0
+        return self.stats["Health"]
+
     def update_stats(self):
         pass
 
@@ -228,7 +229,7 @@ class Warrior(Player):
 
     @property
     def max_health(self):
-        return 100 + 20 * (self.level - 1)
+        return self.stats["Health"]
     
     def initialize_class_features(self):
         self.available_items["Strength Elixir"] = Item(
@@ -241,7 +242,6 @@ class Warrior(Player):
 
 class Mage(Player):
     def __init__(self, name):
-        self.name = name
         super().__init__(name, player_class="Mage")
         self.current_mana = 0 
         self.max_mana = 0
@@ -270,7 +270,7 @@ class Mage(Player):
 
     @property
     def max_health(self):
-        return 60 + 10 * (self.level - 1)
+        return self.stats["Health"]
 
 class Archer(Player):
     def __init__(self, name):
@@ -285,7 +285,7 @@ class Archer(Player):
 
     @property
     def max_health(self):
-        return 80 + 15 * (self.level - 1)
+        return self.stats["Health"]
 
     def initialize_class_features(self):
         self.available_items["Agility Elixir"] = Item(
@@ -295,6 +295,3 @@ class Archer(Player):
                 description="Temporarily increases agility by 10",
                 use_text="You drink the elixir and feel faster!"
                 )
-
-conan = Warrior("Conan")
-print(conan.stats)

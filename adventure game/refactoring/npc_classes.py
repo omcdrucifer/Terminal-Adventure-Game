@@ -129,12 +129,15 @@ class NPC:
         self.inventory = Inventory(owner=self)
         self.available_items = initialize_common_items()
         self.active_buffs = {}
-        self.max_health = 0
         self.current_mana = 0
         self.max_mana = 0
 
         self.update_stats()
         self.initialize_class_features()
+
+    @property
+    def max_health(self):
+        return self.stats["Health"]
 
     def update_stats(self):
         pass
@@ -212,7 +215,6 @@ class NPC:
 
 class Fighter(NPC):
     def __init__(self, name):
-        self.name = name
         super().__init__(name, npc_class="Fighter")
 
     def update_stats(self):
@@ -223,7 +225,7 @@ class Fighter(NPC):
 
     @property
     def max_health(self):
-        return 100 + 20 * (self.level - 1)
+        return self.stats["Health"]
     
     def initialize_class_features(self):
         self.available_items["Strength Elixir"] = Item(
@@ -236,7 +238,6 @@ class Fighter(NPC):
 
 class Healer(NPC):
     def __init__(self, name):
-        self.name = name
         super().__init__(name, npc_class="Healer")
         self.current_mana = 0 
         self.max_mana = 0
@@ -265,11 +266,10 @@ class Healer(NPC):
 
     @property
     def max_health(self):
-        return 60 + 10 * (self.level - 1)
+        return self.stats["Health"]
 
 class Rogue(NPC):
     def __init__(self, name):
-        self.name = name
         super().__init__(name, npc_class="Rogue")
 
     def update_stats(self):
@@ -280,7 +280,7 @@ class Rogue(NPC):
 
     @property
     def max_health(self):
-        return 80 + 15 * (self.level - 1)
+        return self.stats["Health"]
 
     def initialize_class_features(self):
         self.available_items["Agility Elixir"] = Item(
