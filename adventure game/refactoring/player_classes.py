@@ -35,12 +35,13 @@ def initialize_mage_spells():
             }
 
 class Item:
-    def __init__(self, name, effect_type, effect_value, description, use_text):
+    def __init__(self, name, effect_type, effect_value, description, use_text, duration=None):
         self.name = name
         self.effect_type = effect_type
         self.effect_value = effect_value
         self.description = description
         self.use_text = use_text
+        self.duration = duration
 
 def initialize_common_items():
     return {
@@ -63,14 +64,16 @@ def initialize_common_items():
                 effect_type="buff_strength",
                 effect_value=10,
                 description="Temporarily increases strength by 10",
-                use_text="You drink the elixir and feel stronger!"
+                use_text="You drink the elixir and feel stronger!",
+                duration=30
                 ),
             "Agility Elixir": Item(
                 name="Agility Elixir",
                 effect_type="buff_agility",
                 effect_value=10,
                 description="Temporarily increases agility by 10",
-                use_text="You drink the elixir and feel faster!"
+                use_text="You drink the elixir and feel faster!",
+                duration=30
                 )
             }
 
@@ -189,8 +192,10 @@ class Player:
             if stat in target.stats:
                 if stat not in self.active_buffs:
                     self.active_buffs[stat] = []
+
                 self.active_buffs[stat].append(item.effect_value)
                 target.stats[stat] += item.effect_value
+
                 success = True
                 message = f"{target.name} gained {item.effect_value} {stat}"
 
@@ -295,3 +300,10 @@ class Archer(Player):
                 description="Temporarily increases agility by 10",
                 use_text="You drink the elixir and feel faster!"
                 )
+
+conan = Warrior("Conan")
+print(f"Initial Stats:", conan.stats)
+conan.use_item("Strength Elixir")
+print(f"After Buff:", conan.stats)
+input("Press Enter to continue after 30 seconds...")
+print("After Buff Expires:", conan.stats)
