@@ -246,4 +246,3 @@ class Giant(Boss):
 
     def initialize_class_features(self):
         self.experience_value = 55 + 10 * (self.level - 1)
-        self.spells = ["Club Swing", "Stomp", "Boulder Throw"]
