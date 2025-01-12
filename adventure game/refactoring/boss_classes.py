@@ -154,6 +154,7 @@ class Boss:
         self.max_mana = 0
         self.inventory = Inventory(owner=self)
         self.available_items = initialize_common_items()
+        self.spells = {}
 
         self.update_stats()
         self.initialize_class_features()

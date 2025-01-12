@@ -131,6 +131,7 @@ class NPC:
         self.active_buffs = {}
         self.current_mana = 0
         self.max_mana = 0
+        self.spells = {}
 
         self.update_stats()
         self.initialize_class_features()
