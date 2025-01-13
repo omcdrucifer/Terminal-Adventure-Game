@@ -2,7 +2,6 @@
 import time
 from typing import Any, Dict, Optional, Tuple, cast
 from characters import Player, NPC, Boss, Enemy
-from story_types import CombatResult, NarrativeResult, RecruitmentResult
 from party import Party
 from combat import Combat 
 from tree import StoryTree, create_story, handle_story_progression

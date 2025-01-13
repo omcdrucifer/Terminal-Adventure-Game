@@ -2,66 +2,43 @@ def get_story_content():
     return {
             "start": {
                 "type": "narrative",
-                "content": {
-                    "text": "You stand at the entrance of the ancient forest...",
-                    "description": "A peaceful morning greets you..."
-                    },
+                "content": {"text": "You are in a town.", "description": "You see a few NPCs around."},
                 "choices": [
-                    {
-                        "id": "choice_solo",
-                        "text": "Take the narrow path through the dense forest",
-                        "next_node": "solo_path",
-                        "requirements": {"party_size": {"max": 1}}
-                        },
-                    {
-                        "id": "choice_village",
-                        "text": "Visit the nearby village to seek companions",
-                        "next_node": "village_path",
-                        "requirements": {"party_size": {"max": 3}}
-                        }
+                    {"id": "1", "text": "Talk to the merchant", "next_node": "merchant"},
+                    {"id": "2", "text": "Explore the town", "next_node": "explore"}
                     ]
                 },
-            "village_healer": {
-                "type": "recruitment",
-                "content": {
-                    "npc_class": "Healer",
-                    "name": "Elena",
-                    "description": """You find a skilled healer tending to villagers in a small shrine,
-                                   'I've heard rumors of dark forces gathering in the forest,' she says,
-                                   'Perhaps our paths align?'""",
-                    "requirements": {
-                        "min_level": 2,
-                        "max_party_size": 3,
-                        "class_not_in_party": "Healer",
-                        "items_required": "Health Potion"
-                        },
-                    "consequences": {
-                        "accept": {
-                            "items_gained": [
-                                {"name": "Healing Staff", "quantity": 1},
-                                {"name": "Mana Potion", "quantity": 2}
-                                ],
-                            "items consumed": [
-                                {"name": "Health Potion", "quantity": 1}
-                                ]
-                            },
-                        "reject": {
-                            "next_node": "forest_entrance",
-                            "reputation_change": -5
-                            }
-                        },
-                    "next_node_accept": "village_square",
-                    "next_node_reject": "forest_entrance"
-                    }
+            "merchant": {
+                "type": "dialog",
+                "content": {"text": "Merchant: Hello, traveler! Would you like to buy something?", "description": ""},
+                "choices": [
+                    {"id": "1", "text": "Buy item", "next_node": "buy_item"},
+                    {"id": "2", "text": "Leave", "next_node": "start"}
+                    ]
                 },
-            "solo_path": {
+            "explore": {
+                "type": "narrative",
+                "content": {"text": "You explore the town and find a hidden item.", "description": ""},
+                "choices": [
+                    {"id": "1", "text": "Return to town center", "next_node": "start"}
+                    ]
+                },
+            "buy_item": {
+                "type": "narrative",
+                "content": {"text": "You bought an item.", "description": ""},
+                "choices": [
+                    {"id": "1", "text": "Return to town center", "next_node": "start"}
+                    ]
+                },
+            "goblin_encounter": {
                 "type": "combat",
                 "content": {
-                    "enemies": [("Goblin", 1)],
-                    "description": "A goblin jumps out from behind a tree!",
-                    "victory_node": "post_solo_combat",
-                    "defeat_node": "game over"
+                    "enemy": "Goblin",
+                    "level": 1,
+                    "victory_node": "post_goblin_victory",
+                    "defeat_node": "game_over",
+                    "experience_reward": 50
                     }
-                },
+                }
             # more story nodes
             }

@@ -15,6 +15,7 @@ class GameSave:
 
         save_data = {
                 "player": {
+                    "name": player.name,
                     "class": player.player_class,
                     "level": player.level,
                     "experience": player.experience,
@@ -57,6 +58,7 @@ class GameSave:
                     saves.append({
                         "filename": filename,
                         "timestamp": save_data["timestamp"],
+                        "name": save_data["player"]["name"],
                         "player_class": save_data["player"]["class"],
                         "player_level": save_data["player"]["level"],
                         "location": save_data["location"]
