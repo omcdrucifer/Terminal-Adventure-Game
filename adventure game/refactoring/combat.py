@@ -106,7 +106,7 @@ class Combat:
     def cast_spell(self, caster, spell_name, target):
         spell = caster.spells[spell_name]
         if not spell:
-            return "NOT_ENOUG_MANA", False
+            return "NOT_ENOUGH_MANA", False
 
         damage = spell.base_damage + (caster.stats["Magic"] * spell.scaling_factor)
         caster.current_mana -= spell.mana_cost
@@ -115,7 +115,7 @@ class Combat:
         if target.stats["Health"] < 0:
             target.stats["Health"] = 0
             if hasattr(caster, 'player_class'):
-                caster.experience += target.experience
+                caster.gain_experience(target.experience_value)
             return "DEFEAT" if isinstance(target, Player) else "VICTORY", True
 
         return f"DAMAGE_{int(damage)}", True
