@@ -6,7 +6,7 @@ import time
 from save_states import GameSave
 from tree import create_story, handle_story_progression
 from key_press import KeyboardInput
-from player_classes import Player
+from player_classes import Player, Warrior, Mage, Archer
 from party import Party
 from enemy_classes import Enemy
 from boss_classes import Boss
@@ -50,8 +50,7 @@ class Game:
     def start_new_game(self):
         try:
             name = input("Enter your name: ").strip().title()
-            player_class = self.choose_player_class()
-            self.player = Player(name=name, player_class=player_class)
+            self.player = self.choose_player_class(name)
             self.player_party = Party("player")
             self.player_party.add_member(self.player)
             print(f"\nWelcome, {name}! Your adventure begins now!")
@@ -62,7 +61,7 @@ class Game:
             print(f"Error creating character: {e}")
             return False
 
-    def choose_player_class(self):
+    def choose_player_class(self, name):
         while True:
             print("\nChoose your class:")
             print("1. Warrior")
@@ -70,11 +69,11 @@ class Game:
             print("3. Archer")
             choice = input("Enter your choice (1-3): ")
             if choice == "1":
-                return "Warrior"
+                return Warrior(name)
             elif choice == "2":
-                return "Mage"
+                return Mage(name)
             elif choice == "3":
-                return "Archer"
+                return Archer(name)
             else:
                 print("Invalid choice. Please enter a number between 1 and 3.")
 
@@ -173,7 +172,7 @@ class Game:
         elif self.current_location == "dungeon":
             self.dungeon_menu()
         else:
-            print("ErrorL Invalid location.")
+            print("Error: Invalid location.")
             self.current_location = "town"
 
     def town_menu(self):

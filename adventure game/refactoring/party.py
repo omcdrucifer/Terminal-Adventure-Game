@@ -1,6 +1,7 @@
 # mostly unchanged from the original code. I removed the level sync logic since I'm no longer
 # tethering levels in the class constructor logic as it will be easier to do that in the game loop
 # when constructing the party.
+
 class Party:
     def __init__(self, party_type="player", max_size=4):
         self.members = []
