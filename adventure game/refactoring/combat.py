@@ -112,6 +112,7 @@ class Combat:
         caster.current_mana -= spell.mana_cost
 
         target.stats["Health"] -= damage
+
         if target.stats["Health"] < 0:
             target.stats["Health"] = 0
             if hasattr(caster, 'player_class'):
