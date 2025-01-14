@@ -1,6 +1,6 @@
-# manages parties for both players and enemies
-from base_classes import GameEntity
-from characters import NPC, Enemy, Boss
+# mostly unchanged from the original code. I removed the level sync logic since I'm no longer
+# tethering levels in the class constructor logic as it will be easier to do that in the game loop
+# when constructing the party.
 
 class Party:
     def __init__(self, party_type="player", max_size=4):
@@ -10,9 +10,7 @@ class Party:
 
     def add_member(self, member):
         if len(self.members) >= self.max_size:
-            raise ValueError("Party is full")
-        if not isinstance(member, GameEntity):
-            raise ValueError("Can only add game entities to parties")
+            raise ValueError("Party is full!")
         if self.party_type == "player":
             if hasattr(member, 'player_class') or hasattr(member, 'npc_class'):
                 self.members.append(member)
@@ -34,38 +32,23 @@ class Party:
     def is_party_alive(self):
         return len(self.get_active_members()) > 0
 
-    def synchronize_level(self, player_level):
-        if self.party_type == "player":
-            for member in self.members:
-                if isinstance(member, NPC):
-                    member.synchronize_level(player_level)
-        elif self.party_type == "enemy":
-            party_size = len(self.members)
-            for member in self.members:
-                if isinstance(member, Enemy):
-                    member.__init__(member.enemy_class, player_level)
-                elif isinstance(member, Boss):
-                    member.__init__(member.boss_class, player_level, party_size)
-
     def get_total_health(self):
         if not self.members:
             return 0
-        return sum(member.level for member in self.members) / len(self.members)
+        return sum([member.stats["Health"] for member in self.members])
 
     def get_party_status(self):
         status = []
         for i, member in enumerate(self.members):
             member_type = (
-                    getattr(member, 'player_class', None) or
-                    getattr(member, 'npc_class', None) or
-                    getattr(member, 'enemy_class', None) or
-                    getattr(member, 'boss_class', None)
-                    )
-            status.append(f"{member_type} (#{i}): Health = {member.stats['Health']}")
+                    "Player" if hasattr(member, "player_class") or hasattr(member, "npc_class")
+                else "Enemy" if hasattr(member, "enemy_class") or hasattr(member, "boss_class")
+                else "Unknown"
+            )
+            status.append(f"{i+1}. {member_type} - {member.stats['Health']} HP")
         return status
 
     def get_average_level(self):
         if not self.members:
             return 0
-        total_level = sum(member.level for member in self.members)
-        return total_level / len(self.members)
+        return sum([member.level for member in self.members]) / len(self.members)
