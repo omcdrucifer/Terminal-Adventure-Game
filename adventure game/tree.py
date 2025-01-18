@@ -22,7 +22,7 @@ class StoryTree:
     def get_available_choices(self):
         if self.current_node:
             return self.current_node.choices
-        return []
+        return None
 
 def create_story():
     story = StoryTree()
