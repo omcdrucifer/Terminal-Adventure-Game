@@ -112,6 +112,8 @@ class Game:
                 self.handle_combat_node(result)
             elif result["type"] == "recruitment":
                 self.handle_recruitment_node(result)
+            elif result["type"] == "dialog":
+                self.handle_dialog_node(result)
 
     def handle_narrative_node(self, result):
         narrative_result = result["content"]
@@ -120,11 +122,26 @@ class Game:
         print(narrative_result["description"])
         self.display_choices(result["choices"])
         choice = self.get_choice(result["choices"])
-        self.story.current_node = self.story.nodes[choice["next_node"]]
+        if choice:
+            self.story.current_node = self.story.nodes[choice["next_node"]]
+        else:
+            print("Invalid choice. Please try again.")
+
+    def handle_dialog_node(self, result):
+        dialog_result = result["content"]
+        print("\n" + "=" * 50)
+        print(dialog_result["text"])
+        print(dialog_result["description"])
+        self.display_choices(result["choices"])
+        choice = self.get_choice(result["choices"])
+        if choice:
+            self.story.current_node = self.story.nodes[choice["next_node"]]
+        else:
+            print("Invalid choice. Please try again.")
 
     def display_choices(self, choices):
         print("\nChoices:")
-        for i, choice in enumerate(choices):
+        for i, choice in enumerate(choices, 1):
             print(f"{i}. {choice['text']}")
 
     def get_choice(self, choices):

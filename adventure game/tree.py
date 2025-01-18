@@ -66,8 +66,3 @@ def make_choice(story, choice_id):
             story.current_node = story.nodes[next_node]
             return story.current_node
     return None
-
-story = create_story()
-print(handle_story_progression(story))
-make_choice(story, "1")
-print(handle_story_progression(story))
