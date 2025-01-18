@@ -29,7 +29,8 @@ def create_story():
     story_data = get_story_content()
 
     for node_id, node_data in story_data.items():
-        story.add_node(node_id, node_data["type"], node_data["content"], node_data["choices"])
+        choices = node_data.get("choices", []) # checks if a node has choices attached
+        story.add_node(node_id, node_data["type"], node_data["content"], choices)
         if node_data["type"] == "combat":
             story.nodes[node_id].combat_data = node_data["content"]
 
@@ -65,3 +66,8 @@ def make_choice(story, choice_id):
             story.current_node = story.nodes[next_node]
             return story.current_node
     return None
+
+story = create_story()
+print(handle_story_progression(story))
+make_choice(story, "1")
+print(handle_story_progression(story))
