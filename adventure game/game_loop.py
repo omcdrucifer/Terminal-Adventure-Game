@@ -2,14 +2,15 @@
 # this is for testing. By the end they should be unified as the only time the player should encounter
 # a boss is in a party.
 
+import random
 import time
 from save_states import GameSave
 from tree import create_story, handle_story_progression
 from key_press import KeyboardInput
 from player_classes import Player, Warrior, Mage, Archer
 from party import Party
-from enemy_classes import Enemy
-from boss_classes import Boss
+from enemy_classes import Enemy, Goblin, Orc, Ogre
+from boss_classes import Boss, Dragon, Troll, Giant
 from combat import Combat
 
 class Game:
@@ -347,8 +348,10 @@ class Game:
 
     def start_combat(self):
         if self.player:
+            enemies_list = [Goblin(1), Orc(1), Ogre(1)]
+            random_enemy = random.choice(enemies_list)
             enemy_party = Party("enemy")
-            enemy = Enemy("Goblin", 1)
+            enemy = random_enemy
             enemy_party.add_member(enemy)
             combat = Combat(self.player_party, enemy_party)
             result = self.handle_combat(combat)
@@ -356,8 +359,10 @@ class Game:
 
     def start_boss_combat(self):
         if self.player:
+            boss_list = [Dragon(5), Troll(5), Giant(5)]
+            random_boss = random.choice(boss_list)
             enemy_party = Party("enemy")
-            boss = Boss("Dragon", 5)
+            boss = random_boss
             enemy_party.add_member(boss)
             combat = Combat(self.player_party, enemy_party)
             result = self.handle_combat(combat)
@@ -425,12 +430,12 @@ class Game:
         print("=" * 50)
         print("\nPlayer Party:")
         for member in status["player_party"]:
-            print(f"{member.name} - HP: {member.stats['Health']}")
+            print(f"{member} - HP: {member.stats['Health']}")
             if "mana" in member:
                 print(f"Mana: {member.current_mana}/{member.max_mana}")
         print("\nEnemy Party:")
         for member in status["enemy_party"]:
-            print(f"{member.name} - HP: {member.stats['Health']}")
+            print(f"{member} - HP: {member.stats['Health']}")
 
     def handle_combat_result(self, result):
         if result == "VICTORY":
@@ -438,6 +443,7 @@ class Game:
         elif result == "DEFEAT":
             print("\nYou were defeated!")
             self.playing = False
+            exit(0)
         elif result == "FLED":
             self.current_location = "town"
 
