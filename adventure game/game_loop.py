@@ -140,6 +140,8 @@ class Game:
         choice = self.get_choice(result["choices"])
         print(f"Debug: Next node = {choice['next_node']}")
         if choice:
+            if choice["next_node"] == "buy_item":
+                pass # need to make a shop menu
             self.story.make_choice(choice["id"])
         else:
             print("Invalid choice. Please try again.")
