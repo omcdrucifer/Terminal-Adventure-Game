@@ -38,15 +38,17 @@ class Party:
         return sum([member.stats["Health"] for member in self.members])
 
     def get_party_status(self):
-        status = []
-        for i, member in enumerate(self.members):
+        member_info = []
+        for member in self.members:
             member_type = (
-                    "Player" if hasattr(member, "player_class") or hasattr(member, "npc_class")
-                else "Enemy" if hasattr(member, "enemy_class") or hasattr(member, "boss_class")
+                    "Player" if hasattr(member, "player_class")
+                else "NPC" if hasattr(member, "npc_class")
+                else "Enemy" if hasattr(member, "enemy_class")
+                else "Boss" if hasattr(member, "boss_class")
                 else "Unknown"
             )
-            status.append(f"{i+1}. {member_type} - {member.stats['Health']} HP")
-        return status
+            member_info.append((member, member_type))
+        return member_info
 
     def get_average_level(self):
         if not self.members:

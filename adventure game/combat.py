@@ -43,11 +43,11 @@ class Combat:
 
         best_spell = None
         best_damage = 0
-        for spell_name, spell in boss.spells.items():
+        for _, spell in boss.spells.items():
             potential_damage = spell.base_damage + (boss.stats["Magic"] * spell.scaling_factor)
             if potential_damage > best_damage:
                 best_damage = potential_damage
-                best_spell = spell_name
+                best_spell = spell
 
         if not best_spell:
             return False
@@ -73,18 +73,21 @@ class Combat:
             if spell.can_cast(boss):
                 damage = spell.base_damage + (boss.stats["Magic"] * spell.scaling_factor)
                 weight = int(damage / 5)
-                available_spells.extend([spell_name] * weight)
+                available_spells.extend([(spell_name, spell)] * weight)
 
         if available_spells:
             if boss.boss_class == "Dragon":
                 if boss.stats["Health"] > boss.max_health * 0.7:
-                    return "cast_spell", random.choice(available_spells)
+                    spell_name, _ = random.choice(available_spells)
+                    return "cast_spell", spell_name
             elif boss.boss_class == "Troll":
                 if boss.stats["Health"] < boss.max_health * 0.6:
-                    return "cast_spell", random.choice(available_spells)
+                    spell_name, _ = random.choice(available_spells)
+                    return "cast_spell", spell_name
             elif boss.boss_class == "Giant":
                 if random.random() < 0.6:
-                    return "cast_spell", random.choice(available_spells)
+                    spell_name, _ = random.choice(available_spells)
+                    return "cast_spell", spell_name
 
         return "attack", None
 
