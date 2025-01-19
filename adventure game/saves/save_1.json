@@ -1,0 +1,19 @@
+{
+    "player": {
+        "name": "Andrew",
+        "class": "Mage",
+        "level": 1,
+        "experience": 0,
+        "stats": {
+            "Strength": 10,
+            "Health": 60,
+            "Defense": 5,
+            "Magic": 30,
+            "Agility": 0
+        },
+        "current_mana": 30,
+        "max_mana": 30
+    },
+    "location": "town",
+    "timestamp": "2025-01-18 21:16:55"
+}

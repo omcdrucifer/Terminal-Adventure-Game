@@ -113,6 +113,8 @@ class Game:
                 self.handle_combat_node(result)
             elif result["type"] == "recruitment":
                 self.handle_recruitment_node(result)
+            elif result["type"] == "dialog":
+                self.handle_dialog_node(result)
         else:
             print("Debug: No result from handle_story_progression.")
 
