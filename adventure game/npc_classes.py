@@ -240,8 +240,8 @@ class Fighter(NPC):
 class Healer(NPC):
     def __init__(self, name):
         super().__init__(name, "Healer")
-        self.current_mana = 0 
-        self.max_mana = 0
+        self.current_mana = self.max_mana
+        self.max_mana = 30 + 5 * (self.level - 1)
         self.spells = initialize_healer_spells()
 
     def update_stats(self):
