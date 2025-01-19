@@ -348,7 +348,8 @@ class Game:
 
     def start_combat(self):
         if self.player:
-            enemies_list = [Goblin(1), Orc(1), Ogre(1)]
+            enemy_level = self.player_party.get_average_level()
+            enemies_list = [Goblin(enemy_level), Orc(enemy_level), Ogre(enemy_level)]
             random_enemy = random.choice(enemies_list)
             enemy_party = Party("enemy")
             enemy = random_enemy
@@ -359,7 +360,8 @@ class Game:
 
     def start_boss_combat(self):
         if self.player:
-            boss_list = [Dragon(5), Troll(5), Giant(5)]
+            enemy_level = self.player_party.get_average_level() + 2
+            boss_list = [Dragon(enemy_level), Troll(enemy_level), Giant(enemy_level)]
             random_boss = random.choice(boss_list)
             enemy_party = Party("enemy")
             boss = random_boss
@@ -443,7 +445,7 @@ class Game:
         elif result == "DEFEAT":
             print("\nYou were defeated!")
             self.playing = False
-            exit(0)
+            self.main_menu()
         elif result == "FLED":
             self.current_location = "town"
 
