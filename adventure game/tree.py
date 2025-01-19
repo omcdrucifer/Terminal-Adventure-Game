@@ -79,3 +79,6 @@ def handle_story_progression(story):
                 "choices": current_node.choices
                 }
     return None
+
+story = create_story()
+print(handle_story_progression(story))
