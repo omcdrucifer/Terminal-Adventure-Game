@@ -398,7 +398,7 @@ class Game:
 
                     print("\nChoose target:")
                     for i, enemy in enumerate(combat.enemy_party.members, 1):
-                        print(f"{i}. {enemy.name} - HP: {enemy.stats['Health']}")
+                        print(f"{i}. {enemy.enemy_class} - HP: {enemy.stats['Health']}")
                     target = int(input("Enter target number: ").strip()) - 1
 
                     result, success = combat.handle_combat_turn("cast_spell", target, spell_name)
@@ -429,13 +429,13 @@ class Game:
         print("COMBAT STATUS")
         print("=" * 50)
         print("\nPlayer Party:")
-        for member in status["player_party"]:
-            print(f"{member} - HP: {member.stats['Health']}")
-            if "mana" in member:
+        for member, member_type in status["player_party"]:
+            print(f"{member_type} {member.name} - HP: {member.stats['Health']}")
+            if hasattr(member, "current_mana"):
                 print(f"Mana: {member.current_mana}/{member.max_mana}")
         print("\nEnemy Party:")
-        for member in status["enemy_party"]:
-            print(f"{member} - HP: {member.stats['Health']}")
+        for member, member_type in status["enemy_party"]:
+            print(f"{member.enemy_class} - HP: {member.stats['Health']}")
 
     def handle_combat_result(self, result):
         if result == "VICTORY":

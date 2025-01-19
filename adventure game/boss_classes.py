@@ -141,6 +141,7 @@ class Inventory:
 class Boss:
     def __init__(self, boss_class, level):
         self.boss_class = boss_class
+        self.enemy_class = boss_class
         self.experience_value = 0
         self.level = level
         self.stats = {
