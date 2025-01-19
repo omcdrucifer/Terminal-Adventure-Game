@@ -46,6 +46,7 @@ class Game:
         elif choice == "3":
             print("\nThanks for playing!")
             self.playing = False
+            exit(0)
 
     def start_new_game(self):
         try:
@@ -100,8 +101,21 @@ class Game:
     def main_game_loop(self):
         self.playing = True
         while self.playing:
-            self.handle_story_node()
-            self.handle_location_menu()
+            if self.story.current_node and self.story.current_node.node_id == "start":
+                print("\nWhat would you like to do?")
+                print("1. Interact with NPCs")
+                print("2. Access Town Menu")
+                choice = input("\nEnter your choice: ").strip()
+
+                if choice == "1":
+                    self.handle_story_node()
+                elif choice == "2":
+                    self.story.current_node = None
+                    self.handle_location_menu()
+            elif self.story.current_node:
+                self.handle_story_node()
+            else:
+                self.handle_location_menu()
 
     def handle_story_node(self):
         result = handle_story_progression(self.story)
@@ -112,6 +126,10 @@ class Game:
                 self.handle_combat_node(result)
             elif result["type"] == "recruitment":
                 self.handle_recruitment_node(result)
+            elif result["type"] == "dialog":
+                self.handle_dialog_node(result)
+        else:
+            self.story.current_node = None
 
     def handle_narrative_node(self, result):
         narrative_result = result["content"]
@@ -120,11 +138,36 @@ class Game:
         print(narrative_result["description"])
         self.display_choices(result["choices"])
         choice = self.get_choice(result["choices"])
-        self.story.current_node = self.story.nodes[choice["next_node"]]
+        if choice:
+            print(f"Debug: Next node = {choice['next_node']}")
+            self.story.make_choice(choice["id"])
+
+            if choice["next_node"] == "start":
+                self.story.current_node = self.story.nodes["start"]
+        else:
+            print("Invalid choice. Please try again.")
+
+    def handle_dialog_node(self, result):
+        dialog_result = result["content"]
+        print("\n" + "=" * 50)
+        print(dialog_result["text"])
+        print(dialog_result["description"])
+        self.display_choices(result["choices"])
+        choice = self.get_choice(result["choices"])
+        if choice:
+            print(f"Debug: Next node = {choice['next_node']}")
+            if choice["next_node"] == "buy_item":
+                pass # need to make a shop menu
+            self.story.make_choice(choice["id"])
+
+            if choice["next_node"] == "start":
+                self.story.current_node = self.story.nodes["start"]
+        else:
+            print("Invalid choice. Please try again.")
 
     def display_choices(self, choices):
         print("\nChoices:")
-        for i, choice in enumerate(choices):
+        for i, choice in enumerate(choices, 1):
             print(f"{i}. {choice['text']}")
 
     def get_choice(self, choices):
@@ -214,7 +257,8 @@ class Game:
         elif choice == "3":
             self.game_menu()
         elif choice == "4":
-            self.playing = False
+            self.story.current_node = None
+            self.main_menu()
 
     def dungeon_menu(self):
         while self.current_location == "dungeon":
@@ -255,6 +299,8 @@ class Game:
         while True:
             self.display_game_menu()
             choice = input("\nEnter your choice: ").strip()
+            if choice == "4":
+                break
             self.handle_game_menu_choice(choice)
 
     def display_game_menu(self):
@@ -273,8 +319,6 @@ class Game:
             self.load_game()
         elif choice == "3":
             self.show_character_stats()
-        elif choice == "4":
-            return
 
     def show_character_stats(self):
         print("\n" + "=" * 50)

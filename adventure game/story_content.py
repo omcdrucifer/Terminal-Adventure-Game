@@ -39,6 +39,6 @@ def get_story_content():
                     "defeat_node": "game_over",
                     "experience_reward": 50
                     }
-                }
+                },
             # more story nodes
             }

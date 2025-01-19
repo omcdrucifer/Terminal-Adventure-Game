@@ -247,8 +247,8 @@ class Warrior(Player):
 class Mage(Player):
     def __init__(self, name):
         super().__init__(name, "Mage")
-        self.current_mana = 0 
-        self.max_mana = 0
+        self.current_mana = self.max_mana
+        self.max_mana = 30 + 5 * (self.level - 1)
         self.spells = initialize_mage_spells()
 
     def update_stats(self):
