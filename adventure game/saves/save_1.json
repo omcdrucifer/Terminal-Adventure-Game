@@ -3,10 +3,10 @@
         "name": "Andrew",
         "class": "Mage",
         "level": 1,
-        "experience": 0,
+        "experience": 20.0,
         "stats": {
             "Strength": 10,
-            "Health": 60,
+            "Health": 52.0,
             "Defense": 5,
             "Magic": 30,
             "Agility": 0
@@ -15,5 +15,5 @@
         "max_mana": 30
     },
     "location": "town",
-    "timestamp": "2025-01-19 02:16:38"
+    "timestamp": "2025-01-19 15:01:35"
 }
