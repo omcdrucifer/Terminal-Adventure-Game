@@ -380,7 +380,8 @@ class Game:
                 print("1. Attack")
                 if self.player.player_class == "Mage":
                     print("2. Cast Spell")
-                print("3. Flee")
+                print("3. Use Item")
+                print("4. Flee")
 
                 choice = input("\nEnter your choice: ").strip()
 
@@ -406,6 +407,16 @@ class Game:
                     result, success = combat.handle_combat_turn("cast_spell", target, spell_name)
 
                 elif choice == "3":
+                    print("\nItems:")
+                    for i, item in enumerate(self.player.inventory.items, 1):
+                        print(f"{i}. {item}")
+                    item_choice = int(input("Enter item number: ").strip()) - 1
+                    item_name = self.player.inventory.items[item_choice]
+                    target = self.player
+
+                    result, success = combat.handle_combat_turn("use_item", target, item_name)
+
+                elif choice == "4":
                     result, success = combat.handle_combat_turn("flee")
                     if success:
                         print("You fled from the battle!")
