@@ -17,7 +17,7 @@ class Enemy:
 
     @property
     def max_health(self):
-        return self.stats["Health"]
+        raise NotImplementedError("Subclasses must implement max_health")
 
     def update_stats(self):
         pass
@@ -36,7 +36,7 @@ class Ogre(Enemy):
 
     @property
     def max_health(self):
-        return self.stats["Health"]
+        return 75 + 10 * (self.level - 1)
 
     def initialize_class_features(self):
         self.experience_value = 30 + 5 * (self.level - 1)
@@ -53,7 +53,7 @@ class Goblin(Enemy):
 
     @property
     def max_health(self):
-        return self.stats["Health"]
+        return 50 + 10 * (self.level - 1)
 
     def initialize_class_features(self):
         self.experience_value = 20 + 5 * (self.level - 1)
@@ -69,7 +69,7 @@ class Orc(Enemy):
 
     @property
     def max_health(self):
-        return self.stats["Health"]
+        return 65 + 15 * (self.level - 1)
 
     def initialize_class_features(self):
         self.experience_value = 25 + 5 * (self.level - 1)

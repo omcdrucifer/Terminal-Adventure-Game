@@ -18,14 +18,9 @@ class StoryTree:
 
     def start_story(self, start_node):
         self.current_node = self.nodes.get(start_node)
-        if not self.current_node:
-            print(f"Debug: Start node '{start_node}' not found in nodes")
-        else:
-            print(f"Debug: Story started at node '{self.current_node.node_type}'")
 
     def make_choice(self, choice_id):
         if not self.current_node:
-            print("Debug: No current node found")
             return None
 
         current_node = self.current_node
@@ -36,10 +31,6 @@ class StoryTree:
             if choice["id"] == choice_id:
                 next_node = choice["next_node"]
                 self.current_node = self.nodes.get(next_node)
-                if self.current_node:
-                    print(f"Debug: Moved to node '{next_node}' with type '{self.current_node.node_type}'")
-                else:
-                    print(f"Debug: Next node '{next_node}' not found in nodes")
                 return self.current_node
         return None
 
@@ -51,17 +42,14 @@ class StoryTree:
 def create_story():
     story = StoryTree()
     story_data = get_story_content()
-    print(f"Debug: story_data = {story_data}")
 
     for node_id, node_data in story_data.items():
         choices = node_data.get("choices", []) # checks if a node has choices attached
         story.add_node(node_id, node_data["type"], node_data["content"], choices)
         if node_data["type"] == "combat":
             story.nodes[node_id].combat_data = node_data["content"]
-        print(f"Debug: Added node '{node_id}' with choices '{choices}'")
 
     story.start_story("start")
-    print(f"Debug: story started with current_node = {story.current_node}")
     return story
 
 def handle_story_progression(story):
@@ -69,7 +57,6 @@ def handle_story_progression(story):
         return None
 
     current_node = story.current_node
-    print(f"Debug: current_node type = {current_node.node_type}")
     if current_node.node_type == "combat":
         return current_node.combat_data
     if current_node.node_type in ["narrative", "dialog"]:
@@ -79,6 +66,3 @@ def handle_story_progression(story):
                 "choices": current_node.choices
                 }
     return None
-
-story = create_story()
-print(handle_story_progression(story))

@@ -348,7 +348,8 @@ class Game:
 
     def start_combat(self):
         if self.player:
-            enemies_list = [Goblin(1), Orc(1), Ogre(1)]
+            enemy_level = self.player_party.get_average_level()
+            enemies_list = [Goblin(enemy_level), Orc(enemy_level), Ogre(enemy_level)]
             random_enemy = random.choice(enemies_list)
             enemy_party = Party("enemy")
             enemy = random_enemy
@@ -359,7 +360,8 @@ class Game:
 
     def start_boss_combat(self):
         if self.player:
-            boss_list = [Dragon(5), Troll(5), Giant(5)]
+            enemy_level = self.player_party.get_average_level() + 2
+            boss_list = [Dragon(enemy_level), Troll(enemy_level), Giant(enemy_level)]
             random_boss = random.choice(boss_list)
             enemy_party = Party("enemy")
             boss = random_boss
@@ -378,14 +380,15 @@ class Game:
                 print("1. Attack")
                 if self.player.player_class == "Mage":
                     print("2. Cast Spell")
-                print("3. Flee")
+                print("3. Use Item")
+                print("4. Flee")
 
                 choice = input("\nEnter your choice: ").strip()
 
                 if choice == "1":
                     print("\nChoose target:")
                     for i, enemy in enumerate(combat.enemy_party.members, 1):
-                        print(f"{i}. {enemy.name} - HP: {enemy.stats['Health']}")
+                        print(f"{i}. {enemy.enemy_class} - HP: {enemy.stats['Health']}")
                     target = int(input("Enter target number: ").strip()) - 1
                     result, success = combat.handle_combat_turn("attack", target)
 
@@ -404,6 +407,36 @@ class Game:
                     result, success = combat.handle_combat_turn("cast_spell", target, spell_name)
 
                 elif choice == "3":
+                    if not self.player.inventory.items:
+                        print("\nNo items in inventory.")
+                        continue
+
+                    print("\nAvailable Items:")
+                    items_list = list(self.player.inventory.items.items())
+                    for i, (item_name, quantity) in enumerate(items_list, 1):
+                        print(f"{i}. {item_name} (x{quantity})")
+
+                    try:
+                        item_choice = int(input("Enter item number: (0 to cancel) ").strip())
+                        if item_choice == 0:
+                            continue
+                        if not (1 <= item_choice <= len(items_list)):
+                            print("Invalid choice. Please try again.")
+                            continue
+                        item_name = items_list[item_choice - 1][0]
+                        target = self.player
+                        result, success = combat.handle_combat_turn("use_item", target, None, item_name)
+                        
+                        if success:
+                            print(f"\n{result}")
+                        else:
+                            print("\nFailed to use {selected_item}.")
+                            continue
+                    except ValueError:
+                        print("Invalid choice. Please try again.")
+                        continue
+
+                elif choice == "4":
                     result, success = combat.handle_combat_turn("flee")
                     if success:
                         print("You fled from the battle!")
@@ -417,6 +450,8 @@ class Game:
                         print(f"\nYou dealt {value} damage to the enemy!")
                     elif action == "MANA_RESTORED":
                         print(f"\nYou restored {value} mana!")
+                    elif action == "ITEM":
+                        print(f"\n{value}")
 
                 if result in ["VICTORY", "DEFEAT"]:
                     return result
@@ -443,7 +478,7 @@ class Game:
         elif result == "DEFEAT":
             print("\nYou were defeated!")
             self.playing = False
-            exit(0)
+            self.main_menu()
         elif result == "FLED":
             self.current_location = "town"
 

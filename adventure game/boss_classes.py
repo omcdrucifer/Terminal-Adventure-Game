@@ -162,7 +162,7 @@ class Boss:
 
     @property
     def max_health(self):
-        return self.stats["Health"]
+        raise NotImplementedError("Subclasses must implement max_health")
 
     def update_stats(self):
         pass
@@ -191,7 +191,7 @@ class Dragon(Boss):
 
     @property
     def max_health(self):
-        return self.stats["Health"]
+        return 200 + 10 * (self.level - 1)
 
     def initialize_class_features(self):
         self.experience_value = 100 + 20 * (self.level - 1)
@@ -217,7 +217,7 @@ class Troll(Boss):
 
     @property
     def max_health(self):
-        return self.stats["Health"]
+        return 150 + 30 * (self.level - 1)
 
     def initialize_class_features(self):
         self.experience_value = 75 + 15 * (self.level - 1)
@@ -243,7 +243,7 @@ class Giant(Boss):
 
     @property
     def max_health(self):
-        return self.stats["Health"]
+        return 100 + 20 * (self.level - 1)
 
     def initialize_class_features(self):
         self.experience_value = 55 + 10 * (self.level - 1)

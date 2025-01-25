@@ -92,6 +92,12 @@ class Combat:
         return "attack", None
 
     def use_item(self, user, item_name):
+        if hasattr(user, 'use_item'):
+            return user.use_item(item_name)
+
+        if not hasattr(user, 'inventory') or not hasattr(user, 'current_mana'):
+            return "INVALID_ITEM", False
+
         if item_name not in user.inventory.items:
             return "NO_ITEM", False 
 
@@ -146,7 +152,7 @@ class Combat:
             return "DEFEAT" if isinstance(defender, Player) else "VICTORY", True
         return f"DAMAGE_{damage}", True
 
-    def handle_combat_turn(self, action_type, target_index=None, spell_name=None):
+    def handle_combat_turn(self, action_type, target_index=None, spell_name=None, item_name=None):
         if not self.player_party.is_party_alive():
             return "DEFEAT", True
         if not self.enemy_party.is_party_alive():
@@ -162,6 +168,12 @@ class Combat:
                     result = self.cast_spell(caster, spell_name, target)
                 else:
                     result = "INVALID_TARGET", False
+            elif action_type == "use_item":
+                user = self.get_next_active_player()
+                success, item_message = self.use_item(user, item_name)
+
+                self.is_player_turn = not self.is_player_turn
+                return f"ITEM_{item_message}", success
             elif action_type == "flee":
                 result = ("FLED", True) if random.random() < 0.4 else ("FAILED_FLEE", False)
             else:
