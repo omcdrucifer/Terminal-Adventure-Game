@@ -407,14 +407,34 @@ class Game:
                     result, success = combat.handle_combat_turn("cast_spell", target, spell_name)
 
                 elif choice == "3":
-                    print("\nItems:")
-                    for i, item in enumerate(self.player.inventory.items, 1):
-                        print(f"{i}. {item}")
-                    item_choice = int(input("Enter item number: ").strip()) - 1
-                    item_name = self.player.inventory.items[item_choice]
-                    target = self.player
+                    if not self.player.inventory.items:
+                        print("\nNo items in inventory.")
+                        continue
 
-                    result, success = combat.handle_combat_turn("use_item", target, item_name)
+                    print("\nAvailable Items:")
+                    items_list = list(self.player.inventory.items.items())
+                    for i, (item_name, quantity) in enumerate(items_list, 1):
+                        print(f"{i}. {item_name} (x{quantity})")
+
+                    try:
+                        item_choice = int(input("Enter item number: (0 to cancel) ").strip())
+                        if item_choice == 0:
+                            continue
+                        if not (1 <= item_choice <= len(items_list)):
+                            print("Invalid choice. Please try again.")
+                            continue
+                        selected_item = items_list[item_choice - 1][0]
+                        target = self.player
+                        result, success = combat.handle_combat_turn("use_item", target, selected_item)
+                        
+                        if success:
+                            print(f"\n{result}")
+                        else:
+                            print("\nFailed to use {selected_item}.")
+                            continue
+                    except ValueError:
+                        print("Invalid choice. Please try again.")
+                        continue
 
                 elif choice == "4":
                     result, success = combat.handle_combat_turn("flee")

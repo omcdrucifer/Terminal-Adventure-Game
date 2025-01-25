@@ -92,6 +92,12 @@ class Combat:
         return "attack", None
 
     def use_item(self, user, item_name):
+        if hasattr(user, 'use_item'):
+            return user.use_item(item_name)
+
+        if not hasattr(user, 'inventory') or not hasattr(user, 'current_mana'):
+            return "INVALID_ITEM", False
+
         if item_name not in user.inventory.items:
             return "NO_ITEM", False 
 
@@ -162,6 +168,9 @@ class Combat:
                     result = self.cast_spell(caster, spell_name, target)
                 else:
                     result = "INVALID_TARGET", False
+            elif action_type == "use_item":
+                user = self.get_next_active_player()
+                result = self.use_item(user, spell_name)
             elif action_type == "flee":
                 result = ("FLED", True) if random.random() < 0.4 else ("FAILED_FLEE", False)
             else:
