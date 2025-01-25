@@ -145,7 +145,7 @@ class Player:
 
     @property
     def max_health(self):
-        return self.stats["Health"]
+        raise NotImplementedError("Subclasses must implement max_health")
 
     def update_stats(self):
         pass
@@ -233,7 +233,7 @@ class Warrior(Player):
 
     @property
     def max_health(self):
-        return self.stats["Health"]
+        return 100 + 20 * (self.level - 1)
     
     def initialize_class_features(self):
         self.available_items["Strength Elixir"] = Item(
@@ -274,7 +274,7 @@ class Mage(Player):
 
     @property
     def max_health(self):
-        return self.stats["Health"]
+        return 60 + 10 * (self.level - 1)
 
 class Archer(Player):
     def __init__(self, name):
@@ -289,7 +289,7 @@ class Archer(Player):
 
     @property
     def max_health(self):
-        return self.stats["Health"]
+        return 80 + 15 * (self.level - 1)
 
     def initialize_class_features(self):
         self.available_items["Agility Elixir"] = Item(

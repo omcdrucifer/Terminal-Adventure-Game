@@ -388,7 +388,7 @@ class Game:
                 if choice == "1":
                     print("\nChoose target:")
                     for i, enemy in enumerate(combat.enemy_party.members, 1):
-                        print(f"{i}. {enemy.name} - HP: {enemy.stats['Health']}")
+                        print(f"{i}. {enemy.enemy_class} - HP: {enemy.stats['Health']}")
                     target = int(input("Enter target number: ").strip()) - 1
                     result, success = combat.handle_combat_turn("attack", target)
 
@@ -423,9 +423,9 @@ class Game:
                         if not (1 <= item_choice <= len(items_list)):
                             print("Invalid choice. Please try again.")
                             continue
-                        selected_item = items_list[item_choice - 1][0]
+                        item_name = items_list[item_choice - 1][0]
                         target = self.player
-                        result, success = combat.handle_combat_turn("use_item", target, selected_item)
+                        result, success = combat.handle_combat_turn("use_item", target, None, item_name)
                         
                         if success:
                             print(f"\n{result}")
@@ -450,6 +450,8 @@ class Game:
                         print(f"\nYou dealt {value} damage to the enemy!")
                     elif action == "MANA_RESTORED":
                         print(f"\nYou restored {value} mana!")
+                    elif action == "ITEM":
+                        print(f"\n{value}")
 
                 if result in ["VICTORY", "DEFEAT"]:
                     return result
