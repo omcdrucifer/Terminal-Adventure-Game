@@ -1,13 +1,12 @@
 # there are likely more revisions to come, for now I have separate combat handlers for enemy and boss
 # this is for testing. By the end they should be unified as the only time the player should encounter
 # a boss is in a party.
-
 import random
 import time
 from save_states import GameSave
 from tree import create_story, handle_story_progression
 from key_press import KeyboardInput
-from player_classes import Player, Warrior, Mage, Archer
+from player_classes import Player, Warrior, Mage, Archer, initialize_mage_spells
 from party import Party
 from enemy_classes import Enemy, Goblin, Orc, Ogre
 from boss_classes import Boss, Dragon, Troll, Giant
@@ -89,13 +88,28 @@ class Game:
         return False
 
     def reconstruct_player(self, save_data):
-        self.player = Player(name=save_data["player"]["name"], player_class=save_data["player"]["class"])
+        player_class = save_data["player"]["class"]
+        name = save_data["player"]["name"]
+
+        if player_class == "Warrior":
+            self.player = Warrior(name)
+        elif player_class == "Mage":
+            self.player = Mage(name)
+        elif player_class == "Archer":
+            self.player = Archer(name)
+        else:
+            raise ValueError("Invalid player class: {player_class}")
+
         self.player.level = save_data["player"]["level"]
         self.player.experience = save_data["player"]["experience"]
+        self.player.experience_to_next_level = 100 * (1.5 ** (self.player.level -1))
         self.player.stats = save_data["player"]["stats"]
-        if "current_mana" in save_data["player"]:
+
+        if player_class == "Mage":
             self.player.current_mana = save_data["player"]["current_mana"]
             self.player.max_mana = save_data["player"]["max_mana"]
+            self.player.spells = initialize_mage_spells()
+
         self.player_party = Party("player")
         self.player_party.add_member(self.player)
 
@@ -441,6 +455,9 @@ class Game:
                     if success:
                         print("You fled from the battle!")
                         return "FLED"
+                else:
+                    print("Invalid choice. Please try again.")
+                    continue
             else:
                 result, success = combat.handle_combat_turn("attack")
                 
