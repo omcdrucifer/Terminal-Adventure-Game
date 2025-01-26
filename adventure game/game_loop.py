@@ -91,24 +91,6 @@ class Game:
         player_class = save_data["player"]["class"]
         name = save_data["player"]["name"]
 
-        if player_class == "Warrior":
-            self.player = Warrior(name)
-        elif player_class == "Mage":
-            self.player = Mage(name)
-        elif player_class == "Archer":
-            self.player = Archer(name)
-        else:
-            raise ValueError("Invalid player class: {player_class}")
-
-        self.player.level = save_data["player"]["level"]
-        self.player.experience = save_data["player"]["experience"]
-        self.player.experience_to_next_level = 100 * (1.5 ** (self.player.level -1))
-        self.player.stats = save_data["player"]["stats"]
-
-        if player_class == "Mage":
-            self.player.current_mana = save_data["player"]["current_mana"]
-            self.player.max_mana = save_data["player"]["max_mana"]
-            self.player.spells = initialize_mage_spells()
 
         self.player_party = Party("player")
         self.player_party.add_member(self.player)
