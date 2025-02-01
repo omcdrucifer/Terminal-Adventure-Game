@@ -115,6 +115,9 @@ class Combat:
     def cast_spell(self, caster, spell_name, target):
         spell = caster.spells[spell_name]
         if not spell:
+            return "INVALID_SPELL", False
+
+        if not spell.can_cast(caster):
             return "NOT_ENOUGH_MANA", False
 
         damage = spell.base_damage + (caster.stats["Magic"] * spell.scaling_factor)
