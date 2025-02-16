@@ -23,8 +23,8 @@ class Combat:
 
     def get_next_active_player(self):
         active_members = self.player_party.get_active_members()
-        if not active_members:
-            return None
+        if not active_members: return None
+
         current_member = self.player_party.members[self.active_player_index]
         while current_member.stats["Health"] <= 0:
             self.active_player_index = (self.active_player_index + 1) % len(self.player_party.members)
@@ -33,13 +33,11 @@ class Combat:
 
     def get_next_active_enemy(self):
         active_members = self.enemy_party.get_active_members()
-        if not active_members:
-            return None
+        if not active_members: return None
         return random.choice(active_members)
 
     def should_use_mana_potion(self, boss):
-        if boss.inventory.get_item_count("Mana Potion") == 0:
-            return False
+        if boss.inventory.get_item_count("Mana Potion") == 0: return False
 
         best_spell = None
         best_damage = 0
@@ -49,8 +47,7 @@ class Combat:
                 best_damage = potential_damage
                 best_spell = spell
 
-        if not best_spell:
-            return False
+        if not best_spell: return False
 
         if boss.boss_class == "Dragon":
             return boss.current_mana < best_spell.mana_cost and boss.current_mana < boss.max_mana * 0.4
@@ -62,11 +59,9 @@ class Combat:
         return False
 
     def choose_boss_action(self, boss):
-        if not hasattr(boss, 'boss_class'):
-            return "attack", None
+        if not hasattr(boss, 'boss_class'): return "attack", None
 
-        if self.should_use_mana_potion(boss):
-            return "use_item", "Mana Potion"
+        if self.should_use_mana_potion(boss): return "use_item", "Mana Potion"
 
         available_spells = []
         for spell_name, spell in boss.spells.items():
@@ -92,14 +87,12 @@ class Combat:
         return "attack", None
 
     def use_item(self, user, item_name):
-        if hasattr(user, 'use_item'):
-            return user.use_item(item_name)
+        if hasattr(user, 'use_item'): return user.use_item(item_name)
 
         if not hasattr(user, 'inventory') or not hasattr(user, 'current_mana'):
             return "INVALID_ITEM", False
 
-        if item_name not in user.inventory.items:
-            return "NO_ITEM", False 
+        if item_name not in user.inventory.items: return "NO_ITEM", False 
 
         item = user.inventory.items[item_name]
         if item.effect_type == "mana":
@@ -114,11 +107,10 @@ class Combat:
 
     def cast_spell(self, caster, spell_name, target):
         spell = caster.spells[spell_name]
-        if not spell:
-            return "INVALID_SPELL", False
 
-        if not spell.can_cast(caster):
-            return "NOT_ENOUGH_MANA", False
+        if not spell: return "INVALID_SPELL", False
+
+        if not spell.can_cast(caster): return "NOT_ENOUGH_MANA", False
 
         damage = spell.base_damage + (caster.stats["Magic"] * spell.scaling_factor)
         caster.current_mana -= spell.mana_cost

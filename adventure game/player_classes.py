@@ -104,20 +104,18 @@ class Inventory:
         return True, f"{quantity} {item_name} added to inventory"
 
     def remove_item(self, item_name, quantity=1):
-        if item_name not in self.items:
-            return False, "Item not in inventory"
 
-        if self.items[item_name] < quantity:
-            return False, "Not enough items"
+        if item_name not in self.items: return False, "Item not in inventory"
+
+        if self.items[item_name] < quantity: return False, "Not enough items"
 
         self.items[item_name] -= quantity
-        if self.items[item_name] == 0:
-            del self.items[item_name]
+
+        if self.items[item_name] == 0: del self.items[item_name]
 
         return True, f"{quantity} {item_name} removed from inventory"
 
-    def get_item_count(self, item_name):
-        return self.items.get(item_name, 0)
+    def get_item_count(self, item_name): return self.items.get(item_name, 0)
 
 class Player:
     def __init__(self, name, player_class, player_level=1):
