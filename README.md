@@ -1,6 +1,6 @@
-THIS IS A PERSONAL PORTFOLIO PROJECT
+# THIS IS A PERSONAL PORTFOLIO PROJECT
 
-CHOOSE YOUR OWN ADVENTURE TEXT BASED GAME
+## CHOOSE YOUR OWN ADVENTURE TEXT BASED GAME
 
 The code has been completely refactored up to this point. The game is still moving along
 but I did get set back about a week or so productivity wise with the refactor. 
